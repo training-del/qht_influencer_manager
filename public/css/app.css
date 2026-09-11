@@ -551,6 +551,36 @@ textarea { min-height: 70px; resize: vertical; }
   background: var(--bg); display: block; border: 1px solid var(--line);
 }
 
+/* every proof thumbnail opens the photo full size */
+img[data-p] { cursor: zoom-in; }
+img[data-p]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* ------------------------------- photo viewer ------------------------------- */
+/* Above everything, the person sheet included — a photo can be opened from it. */
+.photo-view {
+  position: fixed; inset: 0; z-index: 120;
+  display: grid; place-items: center; align-content: center; gap: .7rem;
+  padding: calc(3.2rem + var(--sat)) 1rem calc(1.5rem + var(--sab));
+  background: rgba(15, 23, 42, .88);
+  animation: pv-in .16s ease-out;
+}
+.pv-img {
+  max-width: 100%; max-height: calc(100vh - 8rem - var(--sat) - var(--sab));
+  object-fit: contain; border-radius: 10px; background: #1e293b;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .45); cursor: default;
+}
+.pv-cap { margin: 0; color: #e2e8f0; font-size: .88rem; text-align: center; }
+.pv-close {
+  position: absolute; top: calc(.75rem + var(--sat)); right: .75rem;
+  width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .12);
+  color: #fff; font-size: 1.5rem; line-height: 1;
+}
+.pv-close:hover { background: rgba(255, 255, 255, .22); }
+.pv-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@keyframes pv-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .photo-view { animation: none; } }
+
 /* an empty note reads as a dash in the table, and simply disappears on a card */
 .review-table .note-cell:empty::before { content: '—'; color: var(--muted); }
 

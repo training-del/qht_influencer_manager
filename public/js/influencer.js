@@ -1,6 +1,6 @@
 /* Mobile-first influencer app: daily proof upload, calendar, payout, profile. */
 import {
-  api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge,
+  api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, enablePhotoViewer,
   complianceBar, toast, loadProtectedImage, roleLabel, requireUser, formatPhone, enablePasswordToggle,
   renderPasswordRules
 } from '/js/api.js';
@@ -17,6 +17,7 @@ const confirmSignOut = () => {
   if (confirm('Sign out of QHT Influencer Manager?')) auth.logout();
 };
 $('#signOut').onclick = confirmSignOut;
+enablePhotoViewer();              // their own photos open full size too
 
 let calMonth = todayStr().slice(0, 7);
 

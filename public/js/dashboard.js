@@ -5,7 +5,7 @@ import { mountUploader } from '/js/uploader.js';
 import { mountMyDetails } from '/js/mydetails.js';
 import {
   api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, roleLabel, statusLabel,
-  complianceBar, toast, loadProtectedImage, mountTopbar, requireUser,
+  complianceBar, toast, loadProtectedImage, enablePhotoViewer, mountTopbar, requireUser,
   COUNTRY_CODES, DEFAULT_COUNTRY, validatePhone, formatPhone, enablePasswordToggle,
   setupMonthControl, watchTables
 } from '/js/api.js';
@@ -14,6 +14,7 @@ import { apiUrl } from '/js/config.js';
 const me = await requireUser(['admin', 'head_influencer']);
 const isAdmin = me.user.role === 'admin';
 mountTopbar($('#topbar'));
+enablePhotoViewer();              // any proof thumbnail, on any panel, opens full size
 
 /* ------------------------------ sidebar chrome ------------------------------ */
 const svg = d =>
@@ -963,7 +964,8 @@ async function renderSubmissions() {
           </tr></thead>
           <tbody>${rows.map(s => `
             <tr>
-              <td><img class="qthumb" data-p="${esc(s.photo_path)}" alt="Proof by ${esc(s.full_name)}"></td>
+              <td><img class="qthumb" data-p="${esc(s.photo_path)}" alt="Proof by ${esc(s.full_name)}"
+                       data-cap="${esc(`${s.full_name} · ${fmtDate(s.submission_date)} · ${fmtTime(s.captured_at)}`)}"></td>
               <td class="name"><b>${esc(s.full_name)}</b>
                 <div class="tiny muted">${esc(roleLabel(s.role))} · ${esc(s.parent_name || 'QHT Admin')}</div></td>
               <td class="small">${esc(fmtDate(s.submission_date))}

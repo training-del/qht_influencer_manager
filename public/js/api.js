@@ -216,9 +216,66 @@ export async function loadProtectedImage(imgEl, path) {
     });
     if (!res.ok) throw new Error('load failed');
     imgEl.src = URL.createObjectURL(await res.blob());
+    // a proof thumbnail opens full size (enablePhotoViewer) — by keyboard too
+    if (imgEl.dataset.p) { imgEl.tabIndex = 0; imgEl.title = 'Open photo'; }
   } catch {
     imgEl.alt = 'Photo unavailable';
   }
+}
+
+/**
+ * A proof photo at full size, over everything else. The thumbnail already
+ * holds the whole photo (fetched by loadProtectedImage), so it is reused —
+ * no second download. Closes on the ×, a tap outside the photo, or Esc.
+ * @param {HTMLImageElement} thumb  an <img data-p="…"> thumbnail
+ */
+export function openPhoto(thumb) {
+  const caption = thumb.dataset.cap || thumb.alt || '';
+  const view = document.createElement('div');
+  view.className = 'photo-view';
+  view.setAttribute('role', 'dialog');
+  view.setAttribute('aria-modal', 'true');
+  view.setAttribute('aria-label', caption || 'Photo');
+  view.innerHTML = `
+    <button class="pv-close" type="button" aria-label="Close photo">×</button>
+    <img class="pv-img" alt="${esc(thumb.alt || 'Photo')}">
+    ${caption ? `<p class="pv-cap">${esc(caption)}</p>` : ''}`;
+
+  const big = view.querySelector('.pv-img');
+  if (thumb.src.startsWith('blob:')) big.src = thumb.src;
+  else if (thumb.dataset.p) loadProtectedImage(big, thumb.dataset.p);   // still loading
+
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const close = () => {
+    view.remove();
+    document.removeEventListener('keydown', onKey);
+    thumb.focus?.({ preventScroll: true });
+  };
+  view.onclick = e => { if (e.target !== big) close(); };
+  document.addEventListener('keydown', onKey);
+  document.body.append(view);
+  view.querySelector('.pv-close').focus();
+}
+
+/**
+ * Makes every proof thumbnail on the page (any <img data-p>) open full size,
+ * including ones drawn later. Caught in the capture phase, so a photo inside
+ * a card or row that opens something else opens the photo, not both.
+ */
+export function enablePhotoViewer() {
+  document.addEventListener('click', e => {
+    const img = e.target.closest?.('img[data-p]');
+    if (!img || img.closest('.photo-view')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    openPhoto(img);
+  }, true);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('img[data-p]')) {
+      e.preventDefault();
+      openPhoto(e.target);
+    }
+  });
 }
 
 /* ---------------------------- password strength ---------------------------- */
