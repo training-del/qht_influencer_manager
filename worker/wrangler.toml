@@ -1,0 +1,61 @@
+name = "qht-influencer"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# ---------------------------------------------------------------------------
+# Database
+#
+#   npx wrangler d1 create qht-influencer
+#
+# then paste the id it prints into database_id below.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "qht-influencer"
+database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"
+
+# ---------------------------------------------------------------------------
+# Photos — daily proof photos and ID proof documents
+#
+# Named to match the existing buckets (qht-avatars-prod, qht-documents-prod,
+# qht-recordings-prod/dev …): content, then environment.
+#
+#   npx wrangler r2 bucket create qht-proofs-prod
+#   npx wrangler r2 bucket create qht-proofs-dev
+#
+# One bucket holds both kinds, separated by prefix:
+#
+#   proofs/<uuid>.jpg      the daily photo an influencer sends
+#   idproofs/<uuid>.jpg    the ID document captured at registration
+#
+# The bucket stays PRIVATE. Nothing is served from it directly and no public
+# access is enabled — the Worker reads objects out of it and applies the same
+# owner-or-upline check the Express /media route did. Object names are random
+# UUIDs, so a leaked key is not a way to guess anyone else's photo.
+# ---------------------------------------------------------------------------
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "qht-proofs-prod"
+preview_bucket_name = "qht-proofs-dev"     # used by `wrangler dev`
+
+[vars]
+# Which pages the browser may hand an API response to. Comma separated, exact
+# origins, no trailing slash. Deliberately not "*": this API answers with bank
+# details, ID documents and medical proof photos.
+#
+# Add the Pages URL once it exists, and any custom domain:
+# ALLOWED_ORIGINS = "https://qht-influencer.pages.dev,https://app.qhtclinic.com"
+
+# PBKDF2 cost. Left unset so the code's free-plan default (25,000) applies.
+# On the paid plan, set it here and every password is upgraded to the new cost
+# as its owner next signs in — nothing else has to change.
+# PBKDF2_ROUNDS = "600000"
+
+# ---------------------------------------------------------------------------
+# SESSION_SECRET is deliberately NOT in this file. A var here is committed
+# alongside the code, and anyone holding this value can mint a session token for
+# any account. Set it as a secret instead:
+#
+#   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#   npx wrangler secret put SESSION_SECRET
+# ---------------------------------------------------------------------------

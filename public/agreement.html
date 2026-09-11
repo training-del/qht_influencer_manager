@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agreement · QHT Influencer Manager</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    .sheet { max-width: 620px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+    .terms-head { background: var(--ink); color: #fff; padding: 1.2rem 1rem; }
+    .terms-head h1 { color: #fff; margin-bottom: .2rem; }
+    .terms-head p { color: #cbd5e1; margin: 0; font-size: .86rem; }
+    .token-box {
+      background: var(--teal-soft); border: 1px solid #5eead4; border-radius: var(--radius);
+      padding: .9rem; margin-bottom: 1rem;
+    }
+    .token-box .amt { font-size: 1.6rem; font-weight: 800; color: #115e59; line-height: 1.1; }
+    .sticky-accept {
+      position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line);
+      padding: .8rem; margin: 0 -1rem -3rem; box-shadow: 0 -2px 8px rgba(15,23,42,.06);
+    }
+  </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#93c2b8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QHT">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+</head>
+<body>
+  <div class="terms-head">
+    <div class="sheet" style="padding-bottom:0">
+      <h1 id="agTitle">Loading agreement…</h1>
+      <p id="agSub"></p>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div id="msg"></div>
+
+    <!-- ===== acceptance mode (status = pending_agreement) ===== -->
+    <div id="acceptView" class="hide">
+      <div class="token-box">
+        <div class="small" style="color:#115e59">Your token amount per payout cycle</div>
+        <div class="amt" id="tokenAmt">—</div>
+        <div class="small" id="tokenSub" style="color:#115e59"></div>
+      </div>
+
+      <div class="msg info">
+        Tick every box below. You cannot reach your dashboard until all terms are accepted.
+      </div>
+
+      <div id="clauses"></div>
+
+      <div class="card" style="margin-top:1rem">
+        <label for="sig">Type your full name to sign</label>
+        <input id="sig" placeholder="Your registered full name" autocomplete="off">
+        <p class="tiny muted" style="margin:.4rem 0 0">
+          Registered name: <b id="regName"></b>. Your acceptance is recorded with a timestamp.
+        </p>
+      </div>
+
+      <div class="sticky-accept">
+        <div class="row-between" style="margin-bottom:.5rem">
+          <span class="small muted" id="progress">0 of 0 accepted</span>
+          <button class="link" id="signOut">Sign out</button>
+        </div>
+        <button class="btn block" id="acceptBtn" disabled>Accept &amp; continue</button>
+      </div>
+    </div>
+
+    <!-- ===== read-only mode (already accepted) ===== -->
+    <div id="readView" class="hide">
+      <div class="card" id="acceptedMeta" style="margin-bottom:1rem"></div>
+      <div id="readClauses"></div>
+      <button class="btn block ghost" id="backBtn" style="margin-top:1rem">Back to my dashboard</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, auth, $, esc, money, toast, fmtDate, homeFor, nextScreen, goTo } from '/js/api.js';
+
+    const me = await api('/auth/me').catch(() => null);
+    if (!me) await goTo('/');
+
+    $('#signOut').onclick = () => auth.logout();
+    $('#backBtn').onclick = () => location.href = homeFor(me.user.role);
+
+    // Already accepted (or an admin, who has no agreement) -> read-only view.
+    if (!me.needsAgreement) {
+      try {
+        const a = await api('/agreement/mine');
+        $('#agTitle').textContent = a.title;
+        $('#agSub').textContent = `Version ${a.version_label} · accepted ${fmtDate(a.accepted_at)}`;
+        $('#acceptedMeta').innerHTML = `
+          <div class="row-between">
+            <div>
+              <div class="small muted">Signed by</div>
+              <b>${esc(a.signature_name)}</b>
+            </div>
+            <div style="text-align:right">
+              <div class="small muted">Token amount agreed</div>
+              <b>${money(a.token_amount_snap)}</b>
+            </div>
+          </div>
+          <p class="tiny muted" style="margin:.6rem 0 0">
+            ${a.duration_days} day commitment · minimum ${a.min_compliance}% compliance for full payout
+          </p>`;
+        $('#readClauses').innerHTML = a.clauses.map(c => `
+          <div class="clause checked">
+            <div style="font-size:1.1rem">✓</div>
+            <div>
+              <div class="c-title">${esc(c.title)}</div>
+              <div class="c-body">${esc(c.body)}</div>
+            </div>
+          </div>`).join('');
+        $('#readView').classList.remove('hide');
+      } catch {
+        $('#agTitle').textContent = 'No agreement on file';
+        $('#agSub').textContent = 'QHT Admin accounts do not sign the influencer agreement.';
+        $('#readView').classList.remove('hide');
+        $('#acceptedMeta').innerHTML = '<p class="muted small" style="margin:0">Nothing to display.</p>';
+      }
+    } else {
+      /* ---------------- acceptance flow ---------------- */
+      const ag = await api('/agreement/current');
+      $('#agTitle').textContent = ag.title;
+      $('#agSub').textContent = `Version ${ag.version} · ${ag.duration_days} days · minimum ${ag.min_compliance}% compliance`;
+      $('#tokenAmt').textContent = money(ag.tokenAmount);
+      $('#tokenSub').textContent = `paid ${ag.payoutCycle}, subject to the terms below`;
+      $('#regName').textContent = me.user.full_name;
+
+      $('#clauses').innerHTML = ag.clauses.map((c, i) => `
+        <label class="clause" for="c${i}">
+          <input type="checkbox" id="c${i}" data-key="${esc(c.key)}">
+          <div>
+            <div class="c-title">${i + 1}. ${esc(c.title)}${c.required ? '' : ' <span class="tiny muted">(optional)</span>'}</div>
+            <div class="c-body">${esc(c.body)}</div>
+          </div>
+        </label>`).join('');
+
+      const boxes = [...document.querySelectorAll('#clauses input')];
+      const required = ag.clauses.filter(c => c.required).length;
+
+      const refresh = () => {
+        const ticked = boxes.filter(b => b.checked);
+        ticked.forEach(b => b.closest('.clause').classList.add('checked'));
+        boxes.filter(b => !b.checked).forEach(b => b.closest('.clause').classList.remove('checked'));
+        $('#progress').textContent = `${ticked.length} of ${ag.clauses.length} accepted`;
+        const nameOk = $('#sig').value.trim().toLowerCase() === me.user.full_name.trim().toLowerCase();
+        $('#acceptBtn').disabled = !(ticked.length >= required && nameOk);
+      };
+
+      boxes.forEach(b => b.onchange = refresh);
+      $('#sig').oninput = refresh;
+      refresh();
+
+      $('#acceptBtn').onclick = async () => {
+        const btn = $('#acceptBtn');
+        btn.disabled = true;
+        btn.textContent = 'Recording acceptance…';
+        try {
+          await api('/agreement/accept', {
+            method: 'POST',
+            body: {
+              versionId: ag.id,
+              acceptedClauses: boxes.filter(b => b.checked).map(b => b.dataset.key),
+              signatureName: $('#sig').value.trim()
+            }
+          });
+          // re-read: accepting may have left the password step outstanding
+          await goTo(nextScreen(await api('/auth/me')));
+        } catch (err) {
+          toast($('#msg'), err.message, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Accept & continue';
+        }
+      };
+
+      $('#acceptView').classList.remove('hide');
+    }
+  </script>
+  <script type="module">import { mountInstallButton } from '/js/pwa.js'; mountInstallButton();</script>
+</body>
+</html>

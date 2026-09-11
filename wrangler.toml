@@ -1,0 +1,33 @@
+# Cloudflare Pages: the app's screens and its API, from one place.
+#
+# The screens are the static files in public/. The API is functions/, which
+# hands every /api and /media request to the Worker in worker/src.
+#
+#   npx wrangler pages deploy
+#
+# The Worker's own worker/wrangler.toml is still there for running it on its
+# own (npm run dev inside worker/), but the deployed copy is this one.
+
+name = "qht-influencer"
+pages_build_output_dir = "public"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qht-influencer"
+database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "qht-proofs-prod"
+
+[vars]
+# Which origins may read an API response.
+#
+# The browser needs nothing here — it loads the pages from this same origin.
+# The Android build does: it serves its screens from inside the APK, which the
+# WebView presents as https://localhost, so that has to be allowed explicitly.
+ALLOWED_ORIGINS = "https://localhost,capacitor://localhost,http://localhost"
+
+# SESSION_SECRET is set as a secret, never here:
+#   npx wrangler pages secret put SESSION_SECRET

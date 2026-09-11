@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app no longer talks to a laptop on the local network. Its screens are
+  bundled into the APK and its data comes from the Cloudflare Worker over real
+  HTTPS, so there is nothing here to trust beyond the certificates Android
+  already ships with.
+
+  The previous version trusted a self-signed development CA for a handful of LAN
+  addresses. That is gone — shipping a development CA in an installed app is a
+  standing risk, and there is no longer any reason for it.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

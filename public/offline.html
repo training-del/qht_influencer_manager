@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Offline · QHT</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; padding: 1.5rem;
+           background: linear-gradient(160deg, #0f766e, #0f172a); }
+    .box { max-width: 380px; text-align: center; }
+    .ico { font-size: 2.6rem; }
+  </style>
+</head>
+<body>
+  <div class="box card">
+    <div class="ico">📶</div>
+    <h1 style="margin-bottom:.3rem">You are offline</h1>
+    <p class="small muted">
+      Your proof photo needs a connection to reach QHT. Take the photo now if you like —
+      then open the app again once you have signal and submit it.
+    </p>
+    <button class="btn block" onclick="location.reload()">Try again</button>
+  </div>
+</body>
+</html>

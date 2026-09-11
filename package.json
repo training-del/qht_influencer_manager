@@ -1,0 +1,37 @@
+{
+  "name": "qht-influencer-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "QHT multi-level influencer management (Admin -> Head Influencer -> Influencer)",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js",
+    "reset": "node server/seed.js --reset",
+    "icons": "node scripts/prepare-logo.mjs && node scripts/make-icons.mjs && node scripts/android-icons.mjs",
+    "app:ip": "node scripts/set-app-host.mjs",
+    "app:sync": "npx cap sync android",
+    "app:open": "npx cap open android",
+    "app:apk": "node scripts/build-apk.mjs",
+    "cert": "node scripts/make-cert.mjs",
+    "start:https": "node scripts/start-https.mjs",
+    "deploy": "node scripts/stamp-sw.mjs && npx wrangler pages deploy",
+    "deploy:schema": "cd worker && npx wrangler d1 migrations apply qht-influencer --remote",
+    "deploy:list": "npx wrangler pages deployment list --project-name qht-influencer",
+    "deploy:log": "npx wrangler pages deployment tail --project-name qht-influencer"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "playwright": "^1.63.0"
+  }
+}

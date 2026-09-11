@@ -1,0 +1,386 @@
+/* Sign-in screen only. Loaded after app.css, so it can lean on the shared
+   tokens (--teal, --line, --radius) and only add what this one page needs. */
+
+body.auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow-x: hidden;
+  /* A slow drift across an oversized gradient: movement without anything
+     actually moving on screen, so it stays cheap on a phone. */
+  background:
+    radial-gradient(1100px 620px at 12% 8%, rgba(255, 255, 255, .55), transparent 62%),
+    radial-gradient(900px 520px at 88% 92%, rgba(190, 222, 216, .5), transparent 64%),
+    linear-gradient(155deg, #dcece9 0%, #cfe3df 42%, #dfe8e4 100%);
+  background-size: 160% 160%, 160% 160%, 200% 200%;
+  animation: auth-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes auth-drift {
+  from { background-position: 0% 0%, 100% 100%, 0% 50%; }
+  to   { background-position: 30% 24%, 70% 74%, 100% 50%; }
+}
+
+/* ------------------------------ floating seeds ------------------------------ */
+/* The real logo mark, blown across the background like dandelion seeds. */
+.seeds { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+
+.seeds i {
+  position: absolute;
+  display: block;
+  background-color: #6c9a94;      /* seeds read as shadow on the pale ground */
+  -webkit-mask: url("/icons/qht-mark.png") center / contain no-repeat;
+  mask: url("/icons/qht-mark.png") center / contain no-repeat;
+  opacity: 0;
+  animation: seed-float linear infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes seed-float {
+  0%   { transform: translate3d(0, 12vh, 0) rotate(0deg) scale(.85); opacity: 0; }
+  12%  { opacity: var(--peak); }
+  88%  { opacity: var(--peak); }
+  100% { transform: translate3d(var(--drift), -112vh, 0) rotate(var(--spin)) scale(1.1); opacity: 0; }
+}
+
+/* ------------------------------- the window ------------------------------- */
+.auth-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 940px);
+  display: grid;
+  grid-template-columns: 1.02fr .98fr;
+  background: var(--card);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -26px rgba(20, 60, 56, .38), 0 2px 6px rgba(20, 60, 56, .1);
+  animation: shell-in .55s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes shell-in {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ------------------------------- brand panel ------------------------------- */
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  padding: 2.6rem 2.2rem;
+  color: #3d5a56;
+  background-color: #d8e9e5;
+  background-image: linear-gradient(160deg, #e6f2ef 0%, #d8e9e5 48%, #e7efe8 100%);
+  border-right: 1px solid #cbe2de;
+  display: grid;
+  align-content: center;
+  gap: 1.25rem;
+}
+
+/* an oversized mark bled off the corner, as a watermark */
+.auth-brand::after {
+  content: "";
+  position: absolute;
+  right: -22%; bottom: -26%;
+  width: 78%; aspect-ratio: 482 / 426;
+  background-color: #7fada7;
+  opacity: .22;
+  -webkit-mask: url("/icons/qht-mark.png") center / contain no-repeat;
+  mask: url("/icons/qht-mark.png") center / contain no-repeat;
+  animation: watermark-turn 90s linear infinite;
+}
+
+@keyframes watermark-turn { to { transform: rotate(360deg); } }
+
+.auth-brand > * { position: relative; }
+
+.auth-brand .brandmark {
+  width: 104px; height: 132px;                 /* 495 x 630 artwork */
+  background-color: var(--teal-dark);
+}
+
+.auth-brand h1 { color: var(--ink); font-size: 1.55rem; margin: 0; letter-spacing: -.01em; }
+.auth-brand .lede { color: #46625e; margin: 0; max-width: 34ch; }
+
+.auth-points { list-style: none; padding: 0; margin: 0; display: grid; gap: .7rem; }
+
+.auth-points li {
+  display: flex; gap: .65rem; align-items: center;
+  font-size: .88rem; color: #3d5a56;
+  animation: point-in .5s ease-out both;
+}
+.auth-points li:nth-child(1) { animation-delay: .18s; }
+.auth-points li:nth-child(2) { animation-delay: .28s; }
+.auth-points li:nth-child(3) { animation-delay: .38s; }
+
+@keyframes point-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.auth-points .ic {
+  flex: 0 0 auto;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid #cbe2de;
+}
+.auth-points svg {
+  width: 15px; height: 15px; stroke: #2f6f68; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* -------------------------------- form side -------------------------------- */
+.auth-form { padding: 2.6rem 2.2rem; display: grid; align-content: center; }
+.auth-form .head { margin-bottom: 1.4rem; }
+.auth-form .head h2 { font-size: 1.3rem; margin-bottom: .2rem; }
+.auth-form .head p { margin: 0; }
+
+/* the logo only appears here once the brand panel is gone (small screens) */
+.auth-form .head .qht-logo { display: none; }
+
+/* --------------------------- floating-label fields --------------------------- */
+/* The label starts where the text will go and lifts into the top of the box
+   once there is a value, so the form reads as three lines instead of six. */
+.f-float { position: relative; margin-bottom: 1.05rem; }
+
+.f-float > label {
+  position: absolute;
+  left: .85rem; top: .45rem;
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 600;
+  /* without this the label's line box is taller than the text and its bottom
+     edge lands on the value underneath */
+  line-height: 1;
+  color: var(--teal-dark);
+  pointer-events: none;
+  transition: top .16s ease, font-size .16s ease, color .16s ease;
+}
+
+.f-float input {
+  width: 100%;
+  height: 56px;
+  padding: 1.45rem .85rem .4rem;
+  font-size: .95rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.f-float input::placeholder { color: transparent; }
+
+.f-float input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, .14);
+}
+
+/* Resting state: nothing typed and not focused, so the label sits on the line
+   where the text will go. :has() keeps this working even though the password
+   input gets wrapped by the reveal button. */
+.f-float:has(input:placeholder-shown:not(:focus)) > label {
+  top: 1.05rem;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* An autofilled field has a value but the browser can still report it as
+   showing its placeholder, which left the label sitting on top of the number.
+   Lift it back. Two rules, not one selector list: an engine that does not know
+   one of these pseudo-classes would throw away the whole rule, and with it the
+   resting state above. */
+.f-float:has(input:-webkit-autofill) > label,
+.f-float:has(input:-webkit-autofill) > .pw-field ~ label {
+  top: .45rem; font-size: .72rem; font-weight: 600; line-height: 1; color: var(--teal-dark);
+}
+.f-float:has(input:autofill) > label {
+  top: .45rem; font-size: .72rem; font-weight: 600; line-height: 1; color: var(--teal-dark);
+}
+
+/* ------------------------------- autofill ------------------------------- */
+/* Chrome paints its own pale blue over an autofilled field and ignores
+   background-color. An inset shadow the size of the field is the one way to
+   cover it, and -webkit-text-fill-color is what actually colours the text. */
+.f-float input:-webkit-autofill,
+.f-float input:-webkit-autofill:hover,
+.f-float input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 100px #fff inset;
+  box-shadow: 0 0 0 100px #fff inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  /* the shadow is dropped again the moment the field is repainted, so hold it */
+  transition: background-color 100000s ease-in-out 0s;
+}
+.f-float input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 100px #fff inset, 0 0 0 4px rgba(13, 148, 136, .14);
+  box-shadow: 0 0 0 100px #fff inset, 0 0 0 4px rgba(13, 148, 136, .14);
+}
+
+/* This file loads after app.css, so the field padding above would otherwise
+   win and let the text run underneath the reveal button. */
+.f-float .pw-field input { padding-right: 2.7rem; }
+
+.caps {
+  margin: .4rem 0 0;
+  font-size: .74rem;
+  color: var(--amber);
+  display: flex; gap: .35rem; align-items: center;
+}
+/* display:flex above would otherwise beat the browser's own [hidden] rule */
+.caps[hidden] { display: none; }
+
+/* --------------------------------- button --------------------------------- */
+.auth-form .btn.block {
+  position: relative;
+  overflow: hidden;
+  height: 50px;
+  font-size: .98rem;
+  transition: transform .12s ease, box-shadow .16s ease;
+}
+.auth-form .btn.block:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -8px rgba(13, 148, 136, .8);
+}
+.auth-form .btn.block:active:not(:disabled) { transform: translateY(0); }
+
+/* click ripple, positioned by the click handler */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: rgba(255, 255, 255, .45);
+  animation: ripple .5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+.spinner {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255, 255, 255, .4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: .5rem;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* a wrong password should be felt, not just read */
+.shake { animation: shake .4s ease; }
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+.auth-foot { margin-top: 1.1rem; text-align: center; }
+
+/* --------------------------------- portals --------------------------------- */
+/* Each portal wears the colour its level has everywhere else in the app —
+   violet admin, mint head influencer, peach influencer — so the card someone
+   taps here matches the one they see in the hierarchy afterwards. */
+.auth-step.step-in { animation: step-in .28s ease-out both; }
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.portals { display: grid; gap: .8rem; }
+
+.portal {
+  --p-tile: #dcefeb; --p-ink: #2f6f68; --p-edge: #cbe2de;
+
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: .95rem; align-items: center;
+  padding: 1rem 1rem 1rem .95rem;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #eef2f1;
+  box-shadow: 0 10px 26px -18px rgba(20, 60, 56, .45), 0 1px 2px rgba(20, 60, 56, .06);
+  color: inherit; text-decoration: none;
+  transition: transform .16s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.portal.p-admin      { --p-tile: #ece7f8; --p-ink: #5b4a9c; --p-edge: #d8cff0; }
+.portal.p-head       { --p-tile: #dcefeb; --p-ink: #2f6f68; --p-edge: #bfded7; }
+.portal.p-influencer { --p-tile: #fdf0dd; --p-ink: #8a5d25; --p-edge: #efd9b6; }
+
+.portal:hover {
+  transform: translateY(-2px);
+  border-color: var(--p-edge);
+  box-shadow: 0 16px 30px -18px rgba(20, 60, 56, .55), 0 1px 2px rgba(20, 60, 56, .06);
+}
+.portal:active { transform: translateY(0) scale(.99); }
+.portal:focus-visible { outline: 2px solid var(--p-ink); outline-offset: 3px; }
+
+/* a soft raised tile, lit from above, like the reference */
+.portal-ic {
+  width: 52px; height: 52px; border-radius: 16px;
+  display: grid; place-items: center;
+  color: var(--p-ink);
+  background: linear-gradient(160deg, #fff 0%, var(--p-tile) 55%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9),
+              0 6px 14px -8px var(--p-ink);
+}
+.portal-ic svg {
+  width: 24px; height: 24px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+
+.portal-body { display: grid; gap: .2rem; min-width: 0; }
+.portal-body b { color: var(--ink); font-size: 1.05rem; }
+.portal-body span { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+
+.portal-go {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #f3f5f4; color: #4a5a6b;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.portal-go svg {
+  width: 16px; height: 16px; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.portal:hover .portal-go { background: var(--p-tile); color: var(--p-ink); transform: translateX(2px); }
+
+/* which portal you are signing in to, with the way back */
+.portal-line { display: flex; gap: .6rem; align-items: center; margin: 0; flex-wrap: wrap; }
+.portal-chip {
+  display: inline-block; padding: .2rem .65rem; border-radius: 999px;
+  font-size: .78rem; font-weight: 700;
+  background: #dcefeb; color: #2f6f68;
+}
+.portal-chip.p-admin      { background: #ece7f8; color: #5b4a9c; }
+.portal-chip.p-influencer { background: #fdf0dd; color: #8a5d25; }
+.change-portal { font-size: .82rem; color: var(--teal-dark); }
+
+.portal-wrong { display: grid; gap: .6rem; }
+.portal-wrong .btn { justify-self: start; }
+
+/* -------------------------------- narrow -------------------------------- */
+@media (max-width: 899px) {
+  .auth-shell { grid-template-columns: 1fr; width: min(100%, 430px); border-radius: 18px; }
+  .auth-brand { display: none; }
+  .auth-form { padding: 1.9rem 1.4rem; }
+  .auth-form .head { text-align: center; }
+  .portal-line { justify-content: center; }
+  .portal { padding: .85rem .8rem .85rem .8rem; gap: .75rem; border-radius: 18px; }
+  .portal-ic { width: 46px; height: 46px; border-radius: 14px; }
+  .auth-form .head .qht-logo {
+    display: block;
+    width: 84px; height: 107px;
+    margin: 0 auto .7rem;
+    color: var(--teal-dark);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.auth, .seeds i, .auth-brand::after, .auth-shell, .auth-points li { animation: none; }
+  .seeds i { opacity: .12; }
+  .auth-form .btn.block:hover:not(:disabled) { transform: none; }
+}

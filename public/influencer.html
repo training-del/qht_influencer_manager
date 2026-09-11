@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>My QHT · Influencer</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#93c2b8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QHT">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+</head>
+<body>
+  <div class="topbar" style="max-width:480px;margin:0 auto">
+    <div class="brand"><span class="qht-mark" aria-hidden="true"></span> QHT Influencer Manager</div>
+    <div class="who"><b id="myName">…</b><span class="role">Influencer</span></div>
+    <!-- Sign out lives in the bar, not at the bottom of the Profile tab: this
+         app has no drawer, and the bar is on screen at all times. -->
+    <button class="bar-out" id="signOut" type="button" title="Sign out" aria-label="Sign out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="phone">
+    <div class="app-pad stack">
+      <div id="msg"></div>
+
+      <section id="tab-today" class="stack"></section>
+      <section id="tab-history" class="stack hide"></section>
+      <section id="tab-payment" class="stack hide"></section>
+      <section id="tab-profile" class="stack hide"></section>
+      <section id="tab-mydetails" class="stack hide"></section>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button data-tab="today" class="active"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Today</button>
+    <button data-tab="history"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>History</button>
+    <button data-tab="payment"><span class="ico rupee" aria-hidden="true">₹</span>Payment</button>
+    <button data-tab="profile"><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile</button>
+  </nav>
+
+  <script type="module" src="/js/influencer.js"></script>
+  <script type="module">import { mountInstallButton } from '/js/pwa.js'; mountInstallButton();</script>
+</body>
+</html>

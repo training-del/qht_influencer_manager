@@ -1,0 +1,13 @@
+{
+  "appId": "com.qht.influencer",
+  "appName": "QHT Influencer",
+  "webDir": "public",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">QHT Influencer</string>
+    <string name="title_activity_main">QHT Influencer</string>
+    <string name="package_name">com.qht.influencer</string>
+    <string name="custom_url_scheme">com.qht.influencer</string>
+</resources>

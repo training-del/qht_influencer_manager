@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · QHT Influencer Manager</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#93c2b8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QHT">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+</head>
+<body>
+  <div class="nav-backdrop" id="navBackdrop" hidden></div>
+
+  <div class="shell">
+    <aside class="sidenav">
+      <div class="side-inner">
+        <div class="brand-block" id="brandBlock"></div>
+        <nav id="tabs" aria-label="Dashboard sections"></nav>
+        <div class="side-foot" id="sideFoot"></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+      <div class="wrap stack">
+        <div id="msg"></div>
+        <main id="view"><p class="muted">Loading…</p></main>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalHost"></div>
+  <script type="module" src="/js/dashboard.js"></script>
+  <script type="module">import { mountInstallButton } from '/js/pwa.js'; mountInstallButton();</script>
+</body>
+</html>

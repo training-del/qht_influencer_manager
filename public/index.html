@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · QHT Influencer Manager</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#93c2b8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QHT">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="/icons/favicon-32.png" sizes="32x32">
+</head>
+<body class="auth">
+  <!-- seeds are decorative; the script fills them in and skips it on reduced motion -->
+  <div class="seeds" id="seeds" aria-hidden="true"></div>
+
+  <div class="auth-shell">
+    <aside class="auth-brand">
+      <span class="qht-logo brandmark" aria-hidden="true"></span>
+      <div>
+        <h1>Influencer Manager</h1>
+        <p class="lede">Onboard your influencers, collect their daily proof and keep every payout on track — in one place.</p>
+      </div>
+      <ul class="auth-points">
+        <li>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          Daily photo proof, reviewed in a tap
+        </li>
+        <li>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+          Head influencers onboard their own team
+        </li>
+        <li>
+          <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          Token amounts and payouts tracked per person
+        </li>
+      </ul>
+    </aside>
+
+    <main class="auth-form">
+      <!-- step 1: which portal. Each one is also a link — /#admin, /#head,
+           /#influencer — so an admin can send someone straight to theirs. -->
+      <section id="chooser" class="auth-step">
+        <div class="head">
+          <span class="qht-logo" aria-hidden="true"></span>
+          <h2>Choose your portal</h2>
+          <p class="muted small">Your role is set when QHT registers you — pick the one you were given.</p>
+        </div>
+
+        <div class="portals" role="list">
+          <a class="portal p-admin" href="#admin" role="listitem" data-portal="admin">
+            <span class="portal-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.3 8 11 4.6-1.7 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg>
+            </span>
+            <span class="portal-body">
+              <b>Admin</b>
+              <span>Register people, set token amounts, review every proof and release payouts.</span>
+            </span>
+            <span class="portal-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+          </a>
+
+          <a class="portal p-head" href="#head" role="listitem" data-portal="head">
+            <span class="portal-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="portal-body">
+              <b>Head Influencer</b>
+              <span>Add influencers to your team, review their daily photos and send your own.</span>
+            </span>
+            <span class="portal-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+          </a>
+
+          <a class="portal p-influencer" href="#influencer" role="listitem" data-portal="influencer">
+            <span class="portal-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </span>
+            <span class="portal-body">
+              <b>Influencer</b>
+              <span>Send today’s proof photo, see your calendar and track your payout.</span>
+            </span>
+            <span class="portal-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
+          </a>
+        </div>
+      </section>
+
+      <!-- step 2: signing in to the chosen portal -->
+      <section id="signin" class="auth-step" hidden>
+        <div class="head">
+          <span class="qht-logo" aria-hidden="true"></span>
+          <h2>Welcome back</h2>
+          <p class="portal-line">
+            <span class="portal-chip" id="portalChip">Admin</span>
+            <a href="#" class="change-portal" id="changePortal">Change portal</a>
+          </p>
+        </div>
+
+        <div id="msg"></div>
+
+        <form id="loginForm">
+          <div class="field f-float">
+            <input id="identifier" name="identifier" autocomplete="username" required placeholder=" ">
+            <label for="identifier">Phone or email</label>
+          </div>
+          <div class="field f-float">
+            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder=" ">
+            <label for="password">Password</label>
+            <p class="caps" id="caps" hidden><span aria-hidden="true">⇪</span> Caps Lock is on</p>
+          </div>
+          <button class="btn block" id="submitBtn" type="submit">Sign in</button>
+        </form>
+      </section>
+
+      <div class="auth-foot">
+        <button class="btn ghost block install-btn" data-install hidden>
+          <span aria-hidden="true">⬇</span> Install QHT app on this phone
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { api, auth, $, $$, esc, toast, nextScreen, enablePasswordToggle } from '/js/api.js';
+
+    enablePasswordToggle($('#password'));
+
+    /* --------------------------------- portals --------------------------------- */
+    /* The portal is a signpost, not a permission. What someone can reach is
+       decided by the server from their account; this only makes sure they end
+       up in the part of the app that was built for them. */
+    const PORTALS = {
+      admin:      { role: 'admin',           label: 'Admin' },
+      head:       { role: 'head_influencer', label: 'Head Influencer' },
+      influencer: { role: 'influencer',      label: 'Influencer' }
+    };
+    const PORTAL_FOR_ROLE = { admin: 'admin', head_influencer: 'head', influencer: 'influencer' };
+
+    let portal = null;
+
+    /* The hash is the state, so the browser's back button, a refresh and a
+       shared link all land on the same screen. */
+    function route() {
+      const key = location.hash.slice(1);
+      portal = PORTALS[key] ? key : null;
+
+      $('#chooser').hidden = !!portal;
+      $('#signin').hidden = !portal;
+
+      if (portal) {
+        const chip = $('#portalChip');
+        chip.textContent = PORTALS[portal].label;
+        chip.className = `portal-chip p-${portal}`;
+        $('#submitBtn').textContent = `Sign in as ${PORTALS[portal].label}`;
+        document.title = `${PORTALS[portal].label} sign in · QHT Influencer Manager`;
+        $('#signin').classList.remove('step-in');
+        void $('#signin').offsetWidth;
+        $('#signin').classList.add('step-in');
+        // straight to typing, unless the browser already filled it in
+        if (!$('#identifier').value) $('#identifier').focus();
+      } else {
+        document.title = 'Sign in · QHT Influencer Manager';
+        $('#msg').innerHTML = '';
+      }
+    }
+
+    $('#changePortal').onclick = e => {
+      e.preventDefault();
+      // a real entry, so the back button returns to the form
+      history.pushState(null, '', location.pathname);
+      route();
+    };
+    window.addEventListener('hashchange', route);
+    window.addEventListener('popstate', route);
+    route();
+
+    /* ------------------------------ drifting seeds ------------------------------ */
+    /* Built here rather than in the markup so the count can drop on small screens
+       and disappear entirely for anyone who asked for less motion. */
+    const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!calm) {
+      const seeds = $('#seeds');
+      const count = innerWidth < 700 ? 7 : 14;
+      const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+
+      seeds.innerHTML = Array.from({ length: count }, () => {
+        const size = rand(16, 54);
+        return `<i style="
+          left:${rand(-4, 100).toFixed(1)}%;
+          bottom:-${size + 20}px;
+          width:${size.toFixed(0)}px;
+          height:${(size * 0.884).toFixed(0)}px;
+          --peak:${rand(.06, .2).toFixed(2)};
+          --drift:${rand(-14, 14).toFixed(0)}vw;
+          --spin:${rand(-140, 140).toFixed(0)}deg;
+          animation-duration:${rand(22, 46).toFixed(0)}s;
+          animation-delay:-${rand(0, 40).toFixed(0)}s;"></i>`;
+      }).join('');
+    }
+
+    /* -------------------------------- caps lock -------------------------------- */
+    const caps = $('#caps');
+    const watchCaps = e => {
+      if (typeof e.getModifierState !== 'function') return;
+      caps.hidden = !e.getModifierState('CapsLock');
+    };
+    $('#password').addEventListener('keydown', watchCaps);
+    $('#password').addEventListener('keyup', watchCaps);
+    $('#password').addEventListener('blur', () => { caps.hidden = true; });
+
+    /* --------------------------------- ripple --------------------------------- */
+    const btn = $('#submitBtn');
+    btn.addEventListener('pointerdown', e => {
+      if (calm || btn.disabled) return;
+      const r = btn.getBoundingClientRect();
+      const reach = Math.max(r.width, r.height) * 2.2;
+      const dot = document.createElement('span');
+      dot.className = 'ripple';
+      dot.style.cssText = `left:${e.clientX - r.left}px;top:${e.clientY - r.top}px;width:${reach}px;height:${reach}px`;
+      btn.appendChild(dot);
+      dot.addEventListener('animationend', () => dot.remove());
+    });
+
+    if (auth.token) {
+      // already signed in -> bounce to the right home screen
+      api('/auth/me')
+        .then(me => { location.href = nextScreen(me); })
+        .catch(() => auth.logout());
+    }
+
+    const shake = () => {
+      const shell = document.querySelector('.auth-shell');
+      shell.classList.remove('shake');
+      void shell.offsetWidth;                    // restart the animation
+      if (!calm) shell.classList.add('shake');
+    };
+
+    $('#loginForm').onsubmit = async e => {
+      e.preventDefault();
+      const label = `Sign in as ${PORTALS[portal].label}`;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span>Signing in…';
+      try {
+        const res = await api('/auth/login', {
+          method: 'POST',
+          body: { identifier: $('#identifier').value.trim(), password: $('#password').value }
+        });
+
+        /* Right password, wrong door. They have proved the account is theirs,
+           so it is fine to say which portal it belongs to — and to take them
+           there with what they typed still filled in. The token is not kept. */
+        const theirs = PORTAL_FOR_ROLE[res.user.role];
+        if (theirs !== portal) {
+          $('#msg').innerHTML = `
+            <div class="msg warn portal-wrong">
+              This is ${/^[AEIOU]/.test(PORTALS[theirs].label) ? 'an' : 'a'}
+              <b>${esc(PORTALS[theirs].label)}</b> account, not ${esc(PORTALS[portal].label)}.
+              <a href="#${theirs}" class="btn sm" id="goRightPortal">Go to the ${esc(PORTALS[theirs].label)} portal</a>
+            </div>`;
+          btn.disabled = false;
+          btn.textContent = label;
+          return;
+        }
+
+        auth.token = res.token;
+        // agreement first, then the temporary-password swap, then the dashboard
+        location.href = nextScreen(res);
+      } catch (err) {
+        toast($('#msg'), err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = label;
+        shake();
+        $('#password').select();
+      }
+    };
+  </script>
+  <script type="module">import { mountInstallButton } from '/js/pwa.js'; mountInstallButton();</script>
+</body>
+</html>

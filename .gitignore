@@ -1,0 +1,26 @@
+node_modules/
+data/*.sqlite*
+uploads/
+tmp-test/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+certs/
+dist/
+
+# Handed out once, then deleted — never commit real credentials
+dist/temporary-passwords.csv
+dist/d1-import.sql
+
+# secrets and local state — SESSION_SECRET lives in Cloudflare, never here
+.env
+.env.*
+!.env.example
+.dev.vars*
+.wrangler/
+*.jks
+*.keystore
+*.log
+android/.idea/
