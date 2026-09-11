@@ -16,6 +16,7 @@
  * the save bar only wakes up when something has actually changed.
  */
 import { api, $, $$, esc, toast, loadProtectedImage } from '/js/api.js';
+import { shrinkImage, ID_PHOTO, sizeLabel } from '/js/shrink.js';
 
 /* ---------------------------------- formats ---------------------------------- */
 /* Checked in the browser to catch a typo while it is still on screen. An X is
@@ -232,6 +233,8 @@ export function mountMyDetails(host, user, onSaved) {
 
     const form = $('#mdForm', host);
     const fileInput = $('#mdIdFile', host);
+    /** the picked ID photo, shrunk — a promise, so a quick Save can wait for it */
+    let idReady = null;
     const field = name => form.elements[name];
 
     /* what was on file when the form opened — "changed" is measured against this */
@@ -362,21 +365,38 @@ export function mountMyDetails(host, user, onSaved) {
       const f = fileInput.files[0];
       const hint = $('#mdFileHint', host);
       const thumb = $('#mdThumb', host);
+      idReady = null;
       if (!f) { thumb.hidden = true; refresh(); return; }
       if (!/^image\//.test(f.type)) {
         hint.textContent = 'That is not a photo — choose an image of the document.';
         hint.className = 'md-hint bad';
         fileInput.value = '';
-      } else if (f.size > 8 * 1024 * 1024) {
-        hint.textContent = 'That photo is over 8 MB — try a smaller one.';
-        hint.className = 'md-hint bad';
-        fileInput.value = '';
-      } else {
-        thumb.src = URL.createObjectURL(f);
-        thumb.hidden = false;
-        hint.textContent = `${f.name} — will be saved with your details.`;
-        hint.className = 'md-hint ok';
+        refresh();
+        return;
       }
+
+      thumb.src = URL.createObjectURL(f);
+      thumb.hidden = false;
+      hint.textContent = `${f.name} — preparing…`;
+      hint.className = 'md-hint';
+
+      /* Shrunk once, here. The 8 MB limit applies to what is actually sent,
+         so a 12 MB camera photo is fine — it goes up at a few hundred KB. */
+      const ready = idReady = shrinkImage(f, ID_PHOTO);
+      ready.then(small => {
+        if (idReady !== ready) return;             // another file was picked since
+        if (small.size > 8 * 1024 * 1024) {
+          hint.textContent = 'That photo is over 8 MB even after shrinking — try another.';
+          hint.className = 'md-hint bad';
+          fileInput.value = '';
+          idReady = null;
+          thumb.hidden = true;
+          refresh();
+          return;
+        }
+        hint.textContent = `${f.name} — ${sizeLabel(small.size)}, will be saved with your details.`;
+        hint.className = 'md-hint ok';
+      });
       refresh();
     };
 
@@ -416,7 +436,7 @@ export function mountMyDetails(host, user, onSaved) {
          anything edited elsewhere since this page was opened. */
       const fd = new FormData();
       for (const n of edits) {
-        if (n === 'idProofFile') fd.append('idProofFile', fileInput.files[0]);
+        if (n === 'idProofFile') fd.append('idProofFile', await (idReady ?? fileInput.files[0]));
         else fd.append(n, current(n));
       }
 

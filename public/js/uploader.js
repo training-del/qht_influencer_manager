@@ -5,6 +5,7 @@
  * roles sign the same agreement and owe the same daily photo.
  */
 import { api, $, esc, toast, todayStr, fmtDate } from '/js/api.js';
+import { shrinkImage, PROOF_PHOTO } from '/js/shrink.js';
 
 /**
  * Renders the picker into `host` and wires it up.
@@ -23,6 +24,9 @@ export function mountUploader(host, { date = todayStr(), onDone, msgEl } = {}) {
 
   host.innerHTML = `
     <h3>Proof for ${esc(fmtDate(date))}</h3>
+    <!-- messages land here when the page gives no place of its own; toast()
+         replaces its container's contents, so it must never be the host -->
+    <div data-el="msg"></div>
 
     <!-- two explicit choices: the live camera, or a file already on the device -->
     <div class="pick-row" data-el="pickRow">
@@ -79,7 +83,8 @@ export function mountUploader(host, { date = todayStr(), onDone, msgEl } = {}) {
     </div>`;
 
   const el = name => host.querySelector(`[data-el="${name}"]`);
-  const say = (text, kind) => toast(msgEl || host, text, kind);
+  const say = (text, kind) => toast(msgEl || el('msg'), text, kind);
+  const quiet = () => { const m = msgEl || el('msg'); if (m) m.innerHTML = ''; };
 
   let file = null;
   let stream = null;
@@ -167,21 +172,32 @@ export function mountUploader(host, { date = todayStr(), onDone, msgEl } = {}) {
 
   el('snap').onclick = () => {
     const video = el('cam');
+    /* captured straight at upload size — a 4K camera frame at 90% was several
+       MB for a photo that only has to show a person and a bottle */
+    const scale = Math.min(1, PROOF_PHOTO.maxSide / Math.max(video.videoWidth, video.videoHeight));
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
     canvas.toBlob(blob => {
       if (!blob) return say('Could not capture the photo. Try again.', 'error');
       usePhoto(new File([blob], `proof-${date}.jpg`, { type: 'image/jpeg' }));
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', PROOF_PHOTO.quality);
   };
 
   el('camCancel').onclick = () => { stopCamera(); el('pickRow').classList.remove('hide'); };
 
   /* ---- option 2: a file already on the device ---- */
   el('useFile').onclick = () => el('photoInput').click();
-  el('photoInput').onchange = e => { if (e.target.files[0]) usePhoto(e.target.files[0]); };
+  /* a gallery photo is shrunk before it is previewed, so what is shown is
+     exactly what will be sent */
+  el('photoInput').onchange = async e => {
+    const picked = e.target.files[0];
+    if (!picked) return;
+    say('Preparing photo…', 'info');
+    usePhoto(await shrinkImage(picked, PROOF_PHOTO));
+    quiet();                                       // the preview says the rest
+  };
   el('retake').onclick = reset;
 
   el('sendBtn').onclick = async () => {
