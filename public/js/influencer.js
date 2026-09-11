@@ -24,7 +24,7 @@ let calMonth = todayStr().slice(0, 7);
 let releaseCamera = null;
 
 /* --------------------------------- tab switching --------------------------------- */
-const RENDER = { today: renderToday, history: renderHistory, payment: renderPayment, profile: renderProfile };
+const RENDER = { today: renderToday, history: renderHistory, profile: renderProfile };
 
 $$('.bottom-nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
 
@@ -219,53 +219,6 @@ const shiftMonth = (ym, delta) => {
   const d = new Date(y, m - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
-
-/* ----------------------------------- payment ----------------------------------- */
-async function renderPayment() {
-  const el = $('#tab-payment');
-  el.innerHTML = '<p class="muted small">Loading…</p>';
-
-  const p = await api('/payments/mine');
-  const next = p.payments.find(x => x.status !== 'released');
-
-  el.innerHTML = `
-    <div class="hero">
-      <div class="sub">Token amount per ${esc(p.payoutCycle)} cycle</div>
-      <h2 style="font-size:1.9rem">${money(p.tokenAmount)}</h2>
-      <div class="sub">Next payout date: <b>${esc(fmtDate(p.nextPayoutDate))}</b></div>
-    </div>
-
-    ${p.compliance.compliancePct < 80 ? `<div class="msg warn">
-      Your compliance is ${p.compliance.compliancePct}%. The agreement requires 80% —
-      payouts may be held until you catch up.</div>` : ''}
-
-    <div class="card">
-      <h3>Current cycle</h3>
-      ${next ? `
-        <div class="row-between">
-          <div>
-            <b>${money(next.amount)}</b>
-            <div class="tiny muted">${esc(fmtDate(next.period_start))} – ${esc(fmtDate(next.period_end))}</div>
-          </div>
-          ${badge(next.status)}
-        </div>
-        ${next.note ? `<p class="tiny muted" style="margin:.5rem 0 0">${esc(next.note)}</p>` : ''}`
-      : '<p class="muted small" style="margin:0">No payout raised for the current cycle yet.</p>'}
-    </div>
-
-    <div class="card">
-      <h3>Payment history</h3>
-      ${p.payments.length ? p.payments.map(x => `
-        <div class="list-item">
-          <div class="grow">
-            <b class="small">${money(x.amount)}</b>
-            <div class="tiny muted">${esc(fmtDate(x.period_start))} – ${esc(fmtDate(x.period_end))}
-              ${x.reference_no ? `· ref ${esc(x.reference_no)}` : ''}</div>
-          </div>
-          ${badge(x.status)}
-        </div>`).join('') : '<p class="muted small" style="margin:0">No payments yet.</p>'}
-    </div>`;
-}
 
 /* ---------------------------------- my details ---------------------------------- */
 /* A button on the profile, with how far along they are, instead of the whole

@@ -1498,7 +1498,6 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + env(safe-area-inset-bo
   box-shadow: inset 0 0 0 1.5px #7fe3d5;
 }
 .bottom-nav .ico svg { width: 20px; height: 20px; display: block; }
-.bottom-nav .ico.rupee { font-size: 19px; line-height: 20px; font-weight: 600; }
 .bottom-nav button:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
 
 @media (prefers-reduced-motion: reduce) { .bottom-nav button { transition: none; } }
