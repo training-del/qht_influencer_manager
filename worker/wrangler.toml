@@ -21,7 +21,10 @@ database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"
 # qht-recordings-prod/dev …): content, then environment.
 #
 #   npx wrangler r2 bucket create qht-proofs-prod
-#   npx wrangler r2 bucket create qht-proofs-dev
+#
+# There is no dev bucket: `wrangler dev` runs against a local simulated R2
+# under .wrangler/. Do not use `wrangler dev --remote` — with no preview
+# bucket it would read and write the live photos.
 #
 # One bucket holds both kinds, separated by prefix:
 #
@@ -36,7 +39,6 @@ database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"
 [[r2_buckets]]
 binding = "PHOTOS"
 bucket_name = "qht-proofs-prod"
-preview_bucket_name = "qht-proofs-dev"     # used by `wrangler dev`
 
 [vars]
 # Which pages the browser may hand an API response to. Comma separated, exact

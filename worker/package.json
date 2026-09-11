@@ -6,7 +6,7 @@
     "login": "wrangler login",
     "setup": "npm run setup:db && npm run setup:buckets",
     "setup:db": "wrangler d1 create qht-influencer",
-    "setup:buckets": "wrangler r2 bucket create qht-proofs-prod && wrangler r2 bucket create qht-proofs-dev",
+    "setup:buckets": "wrangler r2 bucket create qht-proofs-prod",
     "migrate": "wrangler d1 migrations apply qht-influencer --remote",
     "migrate:local": "wrangler d1 migrations apply qht-influencer --local",
     "secret": "wrangler secret put SESSION_SECRET",
