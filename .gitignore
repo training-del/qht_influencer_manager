@@ -22,5 +22,10 @@ dist/d1-import.sql
 .wrangler/
 *.jks
 *.keystore
+# the release signing key's passwords — back up with the .jks, never commit
+android/keystore.properties
+# the published APK and its apk.json: built by scripts/build-apk.mjs, deployed
+# from this folder, too large to belong in git
+public/downloads/
 *.log
 android/.idea/

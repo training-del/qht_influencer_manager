@@ -12,7 +12,7 @@
    new service worker when this file's bytes change, and the cache is named
    after this value — so a deploy invalidates the old shell instead of leaving
    yesterday's JavaScript to be served one more time. */
-const VERSION = '20260911060045';
+const VERSION = '20260911094018';
 const SHELL = `shell-${VERSION}`;
 
 const SHELL_FILES = [
@@ -63,6 +63,9 @@ self.addEventListener('fetch', event => {
 
   // live data and private photos always go to the network
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/')) return;
+
+  // the APK download: a few MB, and a cached copy would hand out an old version
+  if (url.pathname.startsWith('/downloads/')) return;
 
   // navigations: network first, fall back to the cached page, then the offline note
   if (request.mode === 'navigate') {

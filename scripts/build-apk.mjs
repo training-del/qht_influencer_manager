@@ -1,24 +1,42 @@
 /**
- * Builds the debug APK and drops it in dist/.
+ * Builds the Android app and publishes it for download.
  *
- * The toolchain lives under C:/Android rather than being installed system-wide —
- * nothing was added to the machine's PATH — so JAVA_HOME and ANDROID_HOME are
- * set here. Forward slashes throughout: Windows accepts them and they survive
- * every layer of shell quoting.
+ *   node scripts/build-apk.mjs           release build, signed with the QHT key
+ *   node scripts/build-apk.mjs --debug   debug build (for testing on a cable only)
+ *
+ * The APK lands in dist/ and in public/downloads/, next to an apk.json the
+ * login page reads to show the version and size. `npm run deploy` then puts
+ * it on the site.
+ *
+ * Release, not debug, for anything handed out: a debug build is debuggable,
+ * so anyone with a USB cable can read the app's storage — the signed-in token
+ * included. The signing key is android/qht-release.jks with its passwords in
+ * android/keystore.properties; both stay out of git and must be backed up.
+ * Every future update has to be signed with the same key, or phones will
+ * refuse to install it over the old one.
+ *
+ * The toolchain lives under C:/Android rather than being installed system-wide,
+ * so JAVA_HOME and ANDROID_HOME are set here.
  */
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import { copyFileSync, mkdirSync, existsSync, statSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 const JAVA_HOME = process.env.JAVA_HOME || 'C:/Android/jdk';
 const ANDROID_HOME = process.env.ANDROID_HOME || 'C:/Android/sdk';
+const debug = process.argv.includes('--debug');
 
 for (const [name, path] of [['JDK', JAVA_HOME], ['Android SDK', ANDROID_HOME]]) {
   if (!existsSync(path)) {
     console.error(`${name} not found at ${path}`);
-    console.error('See the "Android APK" section of the README for how to install it.');
     process.exit(1);
   }
+}
+if (!debug && !existsSync('android/keystore.properties')) {
+  console.error('No release key (android/keystore.properties). Restore it from your backup —');
+  console.error('a new key means phones cannot update over the installed app.');
+  process.exit(1);
 }
 
 const env = {
@@ -31,19 +49,44 @@ const env = {
 console.log('Syncing web assets and config into the Android project…');
 execFileSync('npx', ['cap', 'sync', 'android'], { stdio: 'inherit', shell: true });
 
-console.log('Building…');
-execFileSync('cmd', ['/c', '.\\gradlew.bat', 'assembleDebug', '--no-daemon'],
+/* public/ is the app's web root, and public/downloads holds the last APK.
+   Left in, every build would carry the previous one inside it. */
+rmSync(join('android', 'app', 'src', 'main', 'assets', 'public', 'downloads'), { recursive: true, force: true });
+
+console.log(`Building (${debug ? 'debug' : 'release'})…`);
+execFileSync('cmd', ['/c', '.\\gradlew.bat', debug ? 'assembleDebug' : 'assembleRelease', '--no-daemon'],
   { cwd: 'android', stdio: 'inherit', env });
 
-const built = join('android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+const kind = debug ? 'debug' : 'release';
+const built = join('android', 'app', 'build', 'outputs', 'apk', kind, `app-${kind}.apk`);
 if (!existsSync(built)) {
   console.error('Build reported success but no APK was produced at ' + built);
   process.exit(1);
 }
 
-mkdirSync('dist', { recursive: true });
-const out = join('dist', 'qht-influencer.apk');
-copyFileSync(built, out);
+const gradle = readFileSync(join('android', 'app', 'build.gradle'), 'utf8');
+const versionCode = Number(gradle.match(/versionCode\s+(\d+)/)?.[1]);
+const versionName = gradle.match(/versionName\s+"([^"]+)"/)?.[1];
 
-console.log(`\n${out}  (${(statSync(out).size / 1024 / 1024).toFixed(2)} MB)`);
-console.log('Send it to a phone and open it to install.');
+const bytes = readFileSync(built);
+const info = {
+  versionName, versionCode, build: kind,
+  size: bytes.length,
+  sha256: createHash('sha256').update(bytes).digest('hex'),
+  builtAt: new Date().toISOString()
+};
+
+mkdirSync('dist', { recursive: true });
+copyFileSync(built, join('dist', 'qht-influencer.apk'));
+
+if (!debug) {
+  mkdirSync(join('public', 'downloads'), { recursive: true });
+  copyFileSync(built, join('public', 'downloads', 'qht-influencer.apk'));
+  writeFileSync(join('public', 'downloads', 'apk.json'), JSON.stringify(info, null, 2) + '\n');
+}
+
+console.log(`\nQHT Influencer ${versionName} (${versionCode}), ${kind}`);
+console.log(`  ${(info.size / 1024 / 1024).toFixed(2)} MB  sha256 ${info.sha256}`);
+console.log(debug
+  ? '  dist/qht-influencer.apk — debug, not published'
+  : '  dist/ and public/downloads/ — run `npm run deploy` to publish it');
