@@ -19,7 +19,7 @@ database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"
 
 [[r2_buckets]]
 binding = "PHOTOS"
-bucket_name = "qht-proofs-prod"
+bucket_name = "qht-influencer-manager"
 
 [vars]
 # Which origins may read an API response.

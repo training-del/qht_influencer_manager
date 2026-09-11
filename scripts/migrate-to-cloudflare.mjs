@@ -26,7 +26,7 @@ import { UPLOADS_DIR } from '../server/lib/config.js';
 
 const DB_FILE = process.env.DB_FILE || 'data/qht.sqlite';
 const OUT = 'dist';
-const BUCKET = 'qht-proofs-prod';
+const BUCKET = 'qht-influencer-manager';
 const uploadPhotos = process.argv.includes('--photos');
 
 mkdirSync(OUT, { recursive: true });

@@ -92,7 +92,7 @@ One R2 bucket, named to match the ones already in this account
 
 | | |
 |---|---|
-| `qht-proofs-prod` | live |
+| `qht-influencer-manager` | live |
 
 There is no dev bucket. `wrangler dev` uses a local simulated R2 under
 `.wrangler/`; never run `wrangler dev --remote`, which would use the live one.
