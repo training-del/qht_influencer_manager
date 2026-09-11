@@ -282,9 +282,9 @@ async function renderProfile() {
     ${detailsButton(u)}
 
     <div class="card install-card" data-install-card hidden>
-      <h3>Install the app</h3>
-      <p class="small muted">Add QHT to your home screen so daily uploads are one tap away.</p>
-      <button class="btn ghost block" data-install hidden>Install QHT app</button>
+      <h3>Add to home screen</h3>
+      <p class="small muted">Open QHT straight from your home screen, like an app — no download needed.</p>
+      <button class="btn ghost block" data-install hidden>＋ Add QHT to home screen</button>
     </div>
 
     <div class="card">

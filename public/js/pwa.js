@@ -61,7 +61,7 @@ export function mountInstallButton() {
         return;
       }
       if (iOS) {
-        alert('To install:\n\n1. Tap the Share button in Safari\n2. Choose "Add to Home Screen"\n3. Tap Add');
+        alert('To add QHT to your home screen:\n\n1. Tap the Share button in Safari\n2. Choose "Add to Home Screen"\n3. Tap Add');
       }
     };
   });
