@@ -9,9 +9,10 @@ import {
   assertRole, assertAgreementAccepted, assertPasswordSet, visibleUserIds
 } from '../access.js';
 import { complianceFor } from '../lib/compliance.js';
+import { todayIST } from '../lib/time.js';
 
 const gate = user => { assertAgreementAccepted(user); assertPasswordSet(user); };
-const today = () => new Date().toLocaleDateString('en-CA');
+const today = () => todayIST();
 const placeholders = (n, from = 1) =>
   Array.from({ length: n }, (_, i) => `?${i + from}`).join(',');
 

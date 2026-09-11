@@ -163,13 +163,38 @@ export const roleLabel = r =>
 export const statusLabel = s =>
   ({ pending_agreement: 'Awaiting T&C', on_hold: 'On hold' }[s] || String(s || '').replace(/_/g, ' '));
 
-export const fmtDate = d => {
-  if (!d) return '—';
-  const dt = new Date(String(d).replace(' ', 'T'));
-  return isNaN(dt) ? d : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+/* The programme runs on Indian time, whatever the device is set to. */
+const IST = 'Asia/Kolkata';
+
+/* The server sends two kinds of value. A timestamp ("2026-09-11 06:08:59",
+   from SQLite's datetime('now')) is UTC with no zone marker — read without the
+   Z it was taken as local time, which showed 06:08 for a photo sent at 11:38.
+   A bare date ("2026-09-11") is a calendar day, not an instant, and must not
+   shift at all. */
+const parseWhen = d => {
+  const s = String(d);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return { dt: new Date(s + 'T00:00:00Z'), zone: 'UTC', dayOnly: true };
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(s)) {
+    return { dt: new Date(s.replace(' ', 'T') + 'Z'), zone: IST };
+  }
+  return { dt: new Date(s), zone: IST };
 };
 
-export const todayStr = () => new Date().toLocaleDateString('en-CA');
+export const fmtDate = d => {
+  if (!d) return '—';
+  const { dt, zone } = parseWhen(d);
+  return isNaN(dt) ? d : dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: zone });
+};
+
+/** "11:38 am", on Indian time. Empty for a bare date — it has no time. */
+export const fmtTime = d => {
+  if (!d) return '';
+  const { dt, dayOnly } = parseWhen(d);
+  if (isNaN(dt) || dayOnly) return '';
+  return dt.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: IST });
+};
+
+export const todayStr = () => new Date().toLocaleDateString('en-CA', { timeZone: IST });
 
 export const badge = s => `<span class="badge ${esc(s)}">${esc(statusLabel(s))}</span>`;
 

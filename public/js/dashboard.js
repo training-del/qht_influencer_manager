@@ -4,7 +4,7 @@
 import { mountUploader } from '/js/uploader.js';
 import { mountMyDetails } from '/js/mydetails.js';
 import {
-  api, auth, $, $$, esc, money, fmtDate, todayStr, badge, roleLabel, statusLabel,
+  api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, roleLabel, statusLabel,
   complianceBar, toast, loadProtectedImage, mountTopbar, requireUser,
   COUNTRY_CODES, DEFAULT_COUNTRY, validatePhone, formatPhone, enablePasswordToggle,
   setupMonthControl, watchTables
@@ -967,7 +967,7 @@ async function renderSubmissions() {
               <td class="name"><b>${esc(s.full_name)}</b>
                 <div class="tiny muted">${esc(roleLabel(s.role))} · ${esc(s.parent_name || 'QHT Admin')}</div></td>
               <td class="small">${esc(fmtDate(s.submission_date))}
-                <div class="tiny muted">${esc(String(s.captured_at).slice(11, 16))}</div></td>
+                <div class="tiny muted">${esc(fmtTime(s.captured_at))}</div></td>
               <td class="small note-cell">${s.note ? esc(s.note) : ''}</td>
               <td class="c col-approve">
                 <button class="btn sm" data-act="approved" data-id="${s.id}">Approve</button></td>

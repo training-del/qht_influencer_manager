@@ -5,11 +5,16 @@
  * and take the database explicitly, because a Worker has no module-level
  * connection to reach for.
  */
+import { todayIST } from './time.js';
+
+/* D1's clock and the stored timestamps are UTC; the programme's days are IST.
+   India has no daylight saving, so a fixed shift is exact. */
+const IST = `'+5 hours','+30 minutes'`;
 
 /** Days since this user accepted their agreement, counting today. At least 1. */
 export async function activeDays(db, userId) {
   const row = await db.prepare(
-    `SELECT CAST(julianday('now','localtime') - julianday(date(accepted_at)) AS INTEGER) + 1 AS d
+    `SELECT CAST(julianday(date('now',${IST})) - julianday(date(accepted_at,${IST})) AS INTEGER) + 1 AS d
        FROM agreements WHERE user_id = ?1 ORDER BY id DESC LIMIT 1`
   ).bind(userId).first();
   return Math.max(1, row?.d ?? 1);
@@ -37,7 +42,7 @@ export async function complianceFor(db, userId) {
   const pending = s.pending || 0;
   const counted = approved + pending;
   const missed = Math.max(0, days - counted);
-  const today = new Date().toLocaleDateString('en-CA');    // YYYY-MM-DD, local day
+  const today = todayIST();
 
   return {
     daysActive: days,

@@ -1,6 +1,6 @@
 /* Mobile-first influencer app: daily proof upload, calendar, payout, profile. */
 import {
-  api, auth, $, $$, esc, money, fmtDate, todayStr, badge,
+  api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge,
   complianceBar, toast, loadProtectedImage, roleLabel, requireUser, formatPhone, enablePasswordToggle,
   renderPasswordRules
 } from '/js/api.js';
@@ -72,7 +72,7 @@ async function renderToday() {
       <h3 style="margin-bottom:.2rem">${todays ? "Today's proof is submitted" : 'Upload today’s proof'}</h3>
       <p class="small muted" style="margin-bottom:.7rem">
         ${todays
-          ? `Status: ${badge(todays.status)} · sent ${esc(String(todays.captured_at).slice(11, 16))}`
+          ? `Status: ${badge(todays.status)} · sent ${esc(fmtTime(todays.captured_at))}`
           : 'Take a photo showing you consuming the dava today.'}
       </p>
       <button class="btn ${todays ? 'ghost' : ''}" id="openUpload">

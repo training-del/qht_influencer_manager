@@ -11,6 +11,7 @@ import {
 } from '../access.js';
 import { complianceFor } from '../lib/compliance.js';
 import { discard } from '../lib/trash.js';
+import { todayIST } from '../lib/time.js';
 
 const audit = (env, actorId, action, entity, entityId, meta) =>
   env.DB.prepare(
@@ -23,7 +24,7 @@ const jsonBody = async request => {
 };
 
 const gate = user => { assertAgreementAccepted(user); assertPasswordSet(user); };
-const today = () => new Date().toLocaleDateString('en-CA');
+const today = () => todayIST();     // the Worker's clock is UTC; the programme's day is IST
 const placeholders = (n, from = 1) =>
   Array.from({ length: n }, (_, i) => `?${i + from}`).join(',');
 
