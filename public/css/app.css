@@ -69,6 +69,17 @@ p { margin: 0 0 .75rem; }
 .qht-mark { -webkit-mask-image: url('/icons/qht-mark.png'); mask-image: url('/icons/qht-mark.png'); }
 .qht-logo { -webkit-mask-image: url('/icons/qht-logo.png'); mask-image: url('/icons/qht-logo.png'); }
 
+/* ------------------------------ system bars ------------------------------ */
+/* In the Android app on Android 15+, a page with viewport-fit=cover is drawn
+   behind the status bar and the navigation bar — the clock sat on top of the
+   header. Capacitor's SystemBars measures both and hands them to the page as
+   --safe-area-inset-*; a browser has env() instead (an iPhone's notch). Every
+   edge of the screen uses these, never a bare 0. */
+:root {
+  --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+
 /* ---------------------------------- header ---------------------------------- */
 .topbar {
   /* Soft mint rather than near-black: the dark bar was the last piece of the
@@ -76,8 +87,9 @@ p { margin: 0 0 .75rem; }
   background: #93c2b8;
   border-bottom: 1px solid #74a89e;
   color: #000;
-  /* same horizontal padding as .wrap so the header lines up with the content */
-  padding: .7rem clamp(1rem, 2.5vw, 2.75rem);
+  /* same horizontal padding as .wrap so the header lines up with the content;
+     the mint runs up behind the status bar, the contents start below it */
+  padding: calc(.7rem + var(--sat)) clamp(1rem, 2.5vw, 2.75rem) .7rem;
   display: flex;
   align-items: center;
   gap: .75rem;
@@ -1428,7 +1440,7 @@ li.folded > ul { display: none; }
 .md-savebar.dirty { background: #fffaf1; border-color: #e6d3b4; }
 .md-savebar.dirty .md-status { color: #8a5d25; font-weight: 600; }
 /* the influencer app has a bottom bar of its own; sit above it, not behind it */
-body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + env(safe-area-inset-bottom)); }
+body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + var(--sab)); }
 
 @media (prefers-reduced-motion: reduce) {
   .md-step, .md-sec, .md-sec-ic, .md-tick, .md-savebar { transition: none; }
@@ -1497,7 +1509,7 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + env(safe-area-inset-bo
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
   background: #fff; border-top: 1px solid var(--line);
   display: flex; max-width: 480px; margin: 0 auto;
-  padding: .35rem .25rem calc(.35rem + env(safe-area-inset-bottom));
+  padding: .35rem .25rem calc(.35rem + var(--sab));
 }
 .bottom-nav { gap: .25rem; }
 .bottom-nav button {
