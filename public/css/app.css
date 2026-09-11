@@ -1023,6 +1023,29 @@ td.name b { color: var(--ink); }
   border-left: 3px solid var(--org-line);
 }
 
+/* Desktop-only joins. The phone's indented tree draws its own lines. */
+@media (min-width: 720px) {
+  /* A block, and as tall as a card: as an inline-block it sat on a text line
+     whose descender left a break under it, and at 116px it lifted the
+     influencer below it out of line with the rest of its row. */
+  .org-pass { display: block; margin: 0 auto; min-height: 132px; }
+
+  /* A last child's corner is drawn with a right border, just left of centre;
+     every stem is drawn just right of it. For the pass-through, whose line
+     carries on down, that was a visible jog — so its corner moves across. */
+  .org li.org-passli:last-child::before { right: calc(50% - 3px); }
+
+  /* An only child keeps its 22px top padding so its row stays aligned with
+     siblings elsewhere — but nothing was drawn in it, so the card sat a gap
+     below the end of its parent's line. Carry the line down through it. */
+  /* "ul >": the chart's root is an only child too, and must not grow a line
+     up into nothing */
+  .org ul > li:only-child::after {
+    display: block; left: 50%; right: auto; width: 0; height: 22px;
+    border: 0; border-left: 3px solid var(--org-line); border-radius: 0;
+  }
+}
+
 /* Each level gets its own soft ground and edge; the tone says which level it is,
    so the card never has to shout. */
 .org-node {
@@ -1603,17 +1626,45 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + env(safe-area-inset-bo
   .org { width: auto; margin: 0; }
 
   .org, .org ul { display: block; }
-  .org ul { padding-top: 0; padding-left: 1.15rem; margin-left: .55rem; border-left: 3px solid var(--org-line); }
+  .org ul { padding-top: 0; padding-left: 1.3rem; margin-left: .55rem; }
   .org li { padding: .3rem 0 0; text-align: left; position: relative; }
-
-  /* the connectors become a single elbow from the parent's rail */
-  .org li::before, .org li::after { display: none; }
+  /* the desktop's :only-child padding (22px, room for its drop line) outranks
+     the rule above and pushed an only child — krishna, Pratham — down a gap */
+  .org li:nth-child(n) { padding-top: .3rem; }
   .org ul::before { display: none; }
-  .org ul > li::before {
+
+  /* Each child draws its own piece of the parent's rail (::after) and its own
+     elbow into its card (::before). A rail drawn as the list's left border ran
+     on past the last child, down into nothing.
+
+     :nth-child(n) matches every item; it is only there for weight. The
+     desktop chart's :first-child / :last-child / :only-child connector rules
+     are more specific than a plain "ul > li", and were leaking in: a hook on
+     the last elbow, no elbow at all on a first or only child. */
+  .org ul > li:nth-child(n)::before,
+  .org ul > li:nth-child(n)::after {
     display: block; content: ""; position: absolute;
-    left: -1.15rem; top: 1.5rem; width: .9rem;
-    border-top: 3px solid var(--org-line); border-radius: 0;
+    right: auto; border: 0; border-radius: 0;
   }
+  .org ul > li:nth-child(n)::before {                 /* elbow */
+    left: -1.3rem; top: 1.5rem; width: 1.05rem; height: 0;
+    border-top: 3px solid var(--org-line);
+  }
+  .org ul > li:nth-child(n)::after {                  /* rail */
+    left: -1.3rem; top: 0; bottom: 0; width: 0; height: auto;
+    border-left: 3px solid var(--org-line);
+  }
+  /* the last child's rail stops at its elbow — the corner of an "L" */
+  .org ul > li:nth-child(n):last-child::after { bottom: auto; height: calc(1.5rem + 3px); }
+
+  /* An influencer reporting straight to the admin: on the desktop chart it
+     sits in the influencer row with an empty slot above it. An indented tree
+     has no rows, so the slot goes and the influencer hangs off the admin
+     like everyone else. */
+  .org-pass { display: none; }
+  .org ul > li.org-passli:nth-child(n) { padding-top: 0; }
+  .org ul > li.org-passli:nth-child(n)::before { display: none; }
+  .org ul > li.org-passli > ul { padding-left: 0; margin-left: 0; }
 
   /* On a phone the card turns into a row: initials, details, chevron. */
   .org-node {

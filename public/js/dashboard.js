@@ -339,7 +339,7 @@ async function renderHierarchy() {
   const hasHeads = tree.children.some(c => c.role === 'head_influencer');
   const rootChildren = tree.children.map(child =>
     (hasHeads && tree.role === 'admin' && child.role === 'influencer')
-      ? `<li><div class="org-pass" aria-hidden="true"></div><ul>${node(child)}</ul></li>`
+      ? `<li class="org-passli"><div class="org-pass" aria-hidden="true"></div><ul>${node(child)}</ul></li>`
       : node(child)
   ).join('');
 
