@@ -6,6 +6,11 @@ What gets sent, all on Indian time:
 |---|---|---|---|
 | 7 PM | Influencers who have not sent today's photo (a rejected photo does not count) | "Today's photo is still pending" | Today |
 | 12 PM and 7 PM | Head influencers with photos waiting in their team's review queue | "N photos from your team are waiting for your review" | Review queue |
+| Within a minute of a rejection | The person whose photo was rejected (influencer, or a head whose own photo the admin rejected) | "Your photo for 11 Sept was rejected: *reason*. Please send a new one." | Today / History / My Daily Proof |
+
+A rejection is queued by the API (`notification_outbox`, migration 0003) and sent by the
+reminders Worker's every-minute schedule — so the website needs no Firebase key of its own.
+A rejection changed back to approved before it is sent sends nothing.
 
 Only the Android app gets them. The admin gets none.
 

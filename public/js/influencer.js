@@ -19,8 +19,9 @@ const confirmSignOut = () => {
 };
 $('#signOut').onclick = confirmSignOut;
 enablePhotoViewer();              // their own photos open full size too
-// the 7 PM reminder, in the Android app; tapping it opens Today
-enablePush(me, screen => { if (screen === 'today') show('today'); });
+// Android app notifications: the 7 PM reminder and a rejected photo open Today
+// (or History, for an older day's rejected photo)
+enablePush(me, screen => { if (screen === 'today' || screen === 'history') show(screen); });
 
 let calMonth = todayStr().slice(0, 7);
 

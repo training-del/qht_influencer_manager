@@ -178,6 +178,16 @@ async function review({ request, env, params, user, json }) {
       WHERE id = ?4`
   ).bind(b.status, user.id, b.reviewNote || null, sub.id).run();
 
+  /* Tell them, within a minute, that their photo was turned down — queued
+     here, sent by the reminders Worker (worker/src/cron.js, runOutbox). Only on
+     the change to rejected: saving a rejection again, say to fix the reason,
+     does not send a second one. */
+  if (b.status === 'rejected' && sub.status !== 'rejected') {
+    await env.DB.prepare(
+      `INSERT INTO notification_outbox (user_id, kind, submission_id) VALUES (?1, 'proof_rejected', ?2)`
+    ).bind(sub.user_id, sub.id).run();
+  }
+
   await audit(env, user.id, 'review_submission', 'daily_submissions', sub.id, { status: b.status });
   return json({ ok: true });
 }

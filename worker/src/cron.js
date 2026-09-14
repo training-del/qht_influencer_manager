@@ -2,30 +2,37 @@
  * Scheduled notifications — a second Worker, deployed with
  * worker/wrangler.cron.toml, because Cloudflare Pages cannot run on a timer.
  *
- *   7 PM IST   influencers who have not sent today's photo get a reminder
- *   12 PM IST  head influencers with photos waiting get a summary
- *   7 PM IST   …and a second summary
+ *   every minute   queued notifications (a rejected photo) — runOutbox
+ *   7 PM IST       influencers who have not sent today's photo get a reminder
+ *   12 PM IST      head influencers with photos waiting get a summary
+ *   7 PM IST       …and a second summary
  *
- * Each window runs every 5 minutes for half an hour. The free plan allows about
- * 50 outside requests per run (Google's sign-in is one), so a run sends at most
- * MAX_SENDS_PER_RUN and the next run carries on. notification_log makes a repeat
- * harmless: nobody gets the same notification twice on the same day.
+ * The reminder windows run every 5 minutes for half an hour. The free plan
+ * allows about 50 outside requests per run (Google's sign-in is one), so a run
+ * sends at most MAX_SENDS_PER_RUN and the next run carries on. notification_log
+ * makes a repeat harmless: nobody gets the same reminder twice on the same day.
  */
 import { todayIST } from './lib/time.js';
 import { readServiceAccount, getAccessToken, sendToDevice } from './lib/fcm.js';
 
 export const MAX_SENDS_PER_RUN = 45;
+/** the schedule that drains the outbox; every other one is a reminder window */
+export const OUTBOX_CRON = '* * * * *';
+const MAX_ATTEMPTS = 5;
 
 const istHour = at =>
   Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', hourCycle: 'h23' }).format(at));
 
-/** Which notifications a run at this moment is for. */
+/** Which notifications a reminder-window run at this moment is for. */
 export function jobsFor(at) {
   const h = istHour(at);
   if (h === 19) return ['proof_reminder', 'review_summary_evening'];
   if (h === 12) return ['review_summary_noon'];
   return [];
 }
+
+/** Which job a cron schedule starts. */
+export const taskFor = cron => (cron === OUTBOX_CRON ? 'outbox' : 'scheduled');
 
 /** rows (one per device) → one entry per person with all their tokens */
 const byPerson = rows => {
@@ -80,6 +87,10 @@ async function summaryRecipients(db, kind, day) {
   return byPerson(results);
 }
 
+/** "2026-09-11" → "11 Sept" */
+const dayLabel = ymd =>
+  new Date(`${ymd}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
 /** The words, per kind. `data.screen` is where a tap takes them. */
 export function messageFor(kind, person) {
   if (kind === 'proof_reminder') {
@@ -90,6 +101,24 @@ export function messageFor(kind, person) {
       data: { screen: 'today' }
     };
   }
+
+  if (kind === 'proof_rejected') {
+    const isToday = person.submission_date === person.today;
+    let reason = String(person.review_note || '').replace(/\s+/g, ' ').trim().replace(/[.!\s]+$/, '');
+    if (reason.length > 120) reason = reason.slice(0, 117).trimEnd() + '…';
+    return {
+      title: 'Your photo was rejected',
+      body: `Your photo for ${dayLabel(person.submission_date)} was rejected${reason ? `: ${reason}` : ''}. ` +
+            `Please send a new one${isToday ? ' today' : ''}.`,
+      /* heads send proof from the dashboard's "My Daily Proof"; influencers
+         resend today's from Today, an older day's from History */
+      data: {
+        screen: person.role === 'head_influencer' ? 'myproof' : isToday ? 'today' : 'history',
+        date: String(person.submission_date)
+      }
+    };
+  }
+
   const n = Number(person.waiting) || 0;
   return {
     title: 'Photos waiting for review',
@@ -99,8 +128,35 @@ export function messageFor(kind, person) {
 }
 
 /**
- * One scheduled run. Exported with its clock and fetch injectable, so it can be
- * tested without Google or the network.
+ * One sender per run. Signs in to Google only when there is something to send,
+ * and keeps the run inside the free plan's request budget.
+ */
+function makeSender(env, sa, fetchImpl, report) {
+  let budget = MAX_SENDS_PER_RUN;
+  let bearer = null;
+  return {
+    fits: n => n <= budget,
+    async send(tokens, msg) {
+      bearer ??= await getAccessToken(sa, fetchImpl);
+      let delivered = false;
+      let tryAgain = false;
+      for (const token of tokens) {
+        budget--;
+        const outcome = await sendToDevice({ projectId: sa.project_id, bearer, token, ...msg }, fetchImpl);
+        if (outcome === 'sent') { delivered = true; report.sent++; }
+        else if (outcome === 'gone') {
+          await env.DB.prepare('DELETE FROM device_tokens WHERE token = ?1').bind(token).run();
+          report.removed++;
+        } else { tryAgain = true; report.retry++; }
+      }
+      return { delivered, tryAgain };
+    }
+  };
+}
+
+/**
+ * A reminder-window run. Exported with its clock and fetch injectable, so it
+ * can be tested without Google or the network.
  */
 export async function runScheduled(env, at = new Date(), fetchImpl = fetch) {
   const day = todayIST(at);
@@ -110,9 +166,7 @@ export async function runScheduled(env, at = new Date(), fetchImpl = fetch) {
 
   const sa = readServiceAccount(env);
   if (!sa) { report.skipped = 'FCM_SERVICE_ACCOUNT is not set'; return report; }
-
-  let budget = MAX_SENDS_PER_RUN;
-  let bearer = null;                                   // fetched only once someone needs a message
+  const sender = makeSender(env, sa, fetchImpl, report);
 
   for (const kind of kinds) {
     const people = kind === 'proof_reminder'
@@ -120,21 +174,8 @@ export async function runScheduled(env, at = new Date(), fetchImpl = fetch) {
       : await summaryRecipients(env.DB, kind, day);
 
     for (const person of people) {
-      if (person.tokens.length > budget) { report.more = true; break; }
-      bearer ??= await getAccessToken(sa, fetchImpl);
-
-      const msg = messageFor(kind, person);
-      let delivered = false;
-      let tryAgain = false;
-      for (const token of person.tokens) {
-        budget--;
-        const outcome = await sendToDevice({ projectId: sa.project_id, bearer, token, ...msg }, fetchImpl);
-        if (outcome === 'sent') { delivered = true; report.sent++; }
-        else if (outcome === 'gone') {
-          await env.DB.prepare('DELETE FROM device_tokens WHERE token = ?1').bind(token).run();
-          report.removed++;
-        } else { tryAgain = true; report.retry++; }
-      }
+      if (!sender.fits(person.tokens.length)) { report.more = true; break; }
+      const { delivered, tryAgain } = await sender.send(person.tokens, messageFor(kind, person));
 
       /* Logged once it reached them, or once there is nowhere left to send it.
          A Google hiccup is not logged, so the next run tries again. */
@@ -149,11 +190,76 @@ export async function runScheduled(env, at = new Date(), fetchImpl = fetch) {
   return report;
 }
 
+/**
+ * The every-minute run: sends what the API queued. With nothing queued — the
+ * usual case — it is one database query and nothing else.
+ */
+export async function runOutbox(env, at = new Date(), fetchImpl = fetch) {
+  const report = { outbox: true, sent: 0, removed: 0, retry: 0, dropped: 0, more: false, skipped: null };
+
+  const { results: rows } = await env.DB.prepare(
+    `SELECT o.id, o.user_id, o.kind, o.attempts, u.role,
+            s.submission_date, s.review_note, s.status AS sub_status
+       FROM notification_outbox o
+       JOIN users u ON u.id = o.user_id
+       LEFT JOIN daily_submissions s ON s.id = o.submission_id
+      WHERE o.sent_at IS NULL AND o.attempts < ?1
+      ORDER BY o.id
+      LIMIT 50`
+  ).bind(MAX_ATTEMPTS).all();
+  if (!rows.length) return report;
+
+  const sa = readServiceAccount(env);
+  if (!sa) { report.skipped = 'FCM_SERVICE_ACCOUNT is not set'; return report; }
+  const sender = makeSender(env, sa, fetchImpl, report);
+  const today = todayIST(at);
+  const finish = id => env.DB.prepare(
+    `UPDATE notification_outbox SET sent_at = datetime('now') WHERE id = ?1`).bind(id).run();
+
+  for (const row of rows) {
+    // changed their mind: the photo is no longer rejected, so there is nothing to say
+    if (row.kind === 'proof_rejected' && row.sub_status !== 'rejected') {
+      await finish(row.id);
+      report.dropped++;
+      continue;
+    }
+
+    const { results: devices } = await env.DB.prepare(
+      'SELECT token FROM device_tokens WHERE user_id = ?1 ORDER BY id').bind(row.user_id).all();
+    const tokens = devices.map(d => d.token);
+    if (!tokens.length) { await finish(row.id); continue; }          // no app to tell
+    if (!sender.fits(tokens.length)) { report.more = true; break; }
+
+    /* Claimed before sending: if two runs ever overlap, only the one whose
+       update lands sends it. */
+    const claim = await env.DB.prepare(
+      `UPDATE notification_outbox SET attempts = attempts + 1
+        WHERE id = ?1 AND sent_at IS NULL AND attempts = ?2`
+    ).bind(row.id, row.attempts).run();
+    if (!claim.meta.changes) continue;
+
+    const { delivered, tryAgain } = await sender.send(tokens, messageFor(row.kind, { ...row, today }));
+    if (delivered || !tryAgain) await finish(row.id);
+  }
+
+  // sent notices are not needed after a month
+  await env.DB.prepare(
+    `DELETE FROM notification_outbox WHERE sent_at IS NOT NULL AND sent_at < datetime('now', '-30 days')`
+  ).run();
+  return report;
+}
+
 export default {
   async scheduled(event, env, ctx) {
+    const at = new Date(event.scheduledTime);
+    const outbox = taskFor(event.cron) === 'outbox';
     ctx.waitUntil(
-      runScheduled(env, new Date(event.scheduledTime))
-        .then(r => console.log('notifications', JSON.stringify(r)))
+      (outbox ? runOutbox(env, at) : runScheduled(env, at))
+        .then(r => {
+          // the minute runs are silent unless they did something
+          const quiet = outbox && !r.sent && !r.removed && !r.retry && !r.dropped && !r.skipped;
+          if (!quiet) console.log('notifications', JSON.stringify(r));
+        })
         .catch(err => console.error('notifications failed', err))
     );
   },

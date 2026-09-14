@@ -18,12 +18,17 @@ compatibility_date = "2026-09-01"
 workers_dev = false
 
 [triggers]
-# Times are UTC. India is UTC+5:30 all year, so these never drift:
+# "* * * * *" sends what the API queued (a rejected photo) within a minute.
+# With nothing queued it is a single database query — about 1,440 a day, well
+# inside the free plan. It must stay exactly "* * * * *": cron.js tells the
+# jobs apart by this string (OUTBOX_CRON).
+#
+# The reminder windows are UTC. India is UTC+5:30 all year, so they never drift:
 #   06:30–06:55 UTC = 12:00–12:25 IST   review summaries
 #   13:30–13:55 UTC = 19:00–19:25 IST   photo reminders + review summaries
 # Every 5 minutes for half an hour, so a batch too big for one run (about 45
 # notifications on the free plan) is finished by the next ones.
-crons = ["30-55/5 6 * * *", "30-55/5 13 * * *"]
+crons = ["* * * * *", "30-55/5 6 * * *", "30-55/5 13 * * *"]
 
 [[d1_databases]]
 binding = "DB"

@@ -16,8 +16,12 @@ const me = await requireUser(['admin', 'head_influencer']);
 const isAdmin = me.user.role === 'admin';
 mountTopbar($('#topbar'));
 enablePhotoViewer();              // any proof thumbnail, on any panel, opens full size
-// head influencers: the review summaries, in the Android app; a tap opens the queue
-enablePush(me, screen => { if (screen === 'review') show('submissions'); });
+// head influencers, in the Android app: a review summary opens the queue,
+// their own rejected photo opens My Daily Proof
+enablePush(me, screen => {
+  if (screen === 'review') show('submissions');
+  else if (screen === 'myproof') show('myproof');
+});
 
 /* ------------------------------ sidebar chrome ------------------------------ */
 const svg = d =>
