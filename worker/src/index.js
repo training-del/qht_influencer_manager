@@ -16,6 +16,7 @@ import agreementRoutes from './routes/agreements.js';
 import submissionRoutes from './routes/submissions.js';
 import paymentRoutes from './routes/payments.js';
 import reportRoutes from './routes/reports.js';
+import deviceRoutes from './routes/devices.js';
 
 /* Routes are [method, pattern, handler]. A pattern segment starting with ":"
    captures — "/users/:id/impact" gives { id }.
@@ -23,7 +24,7 @@ import reportRoutes from './routes/reports.js';
    /users/:id or it would be read as an id. */
 const ROUTES = [
   ...authRoutes, ...userRoutes, ...agreementRoutes,
-  ...submissionRoutes, ...paymentRoutes, ...reportRoutes
+  ...submissionRoutes, ...paymentRoutes, ...reportRoutes, ...deviceRoutes
 ];
 
 function match(method, path) {

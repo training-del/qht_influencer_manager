@@ -3,11 +3,27 @@
 import { apiUrl } from '/js/config.js';
 
 const TOKEN_KEY = 'qht_token';
+/** this phone's notification token, once registered (see push.js) */
+export const PUSH_KEY = 'qht_push_token';
 
 export const auth = {
   get token() { return localStorage.getItem(TOKEN_KEY); },
   set token(t) { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); },
-  logout() { localStorage.removeItem(TOKEN_KEY); location.href = '/'; }
+  logout() {
+    /* The phone stops getting this person's reminders the moment they sign
+       out. keepalive lets the request finish while the page is leaving. */
+    const push = localStorage.getItem(PUSH_KEY);
+    if (push && this.token) {
+      fetch(apiUrl('/api/devices'), {
+        method: 'DELETE', keepalive: true,
+        headers: { Authorization: 'Bearer ' + this.token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: push })
+      }).catch(() => {});
+    }
+    localStorage.removeItem(PUSH_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    location.href = '/';
+  }
 };
 
 /** fetch wrapper: attaches the bearer token and turns API errors into thrown Errors. */

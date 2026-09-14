@@ -53,6 +53,16 @@ execFileSync('npx', ['cap', 'sync', 'android'], { stdio: 'inherit', shell: true 
    Left in, every build would carry the previous one inside it. */
 rmSync(join('android', 'app', 'src', 'main', 'assets', 'public', 'downloads'), { recursive: true, force: true });
 
+/* Push notifications need Firebase inside the app. Only when this build has it
+   is the web code told it may register — without it, asking the native plugin
+   crashes the app on start. The website's own copy always says false. */
+const firebase = existsSync(join('android', 'app', 'google-services.json'));
+writeFileSync(join('android', 'app', 'src', 'main', 'assets', 'public', 'js', 'push-flag.js'),
+  `/* written by scripts/build-apk.mjs */\nexport const PUSH_READY = ${firebase};\n`);
+console.log(firebase
+  ? 'Firebase config found: notifications are on in this build.'
+  : 'No android/app/google-services.json: notifications are OFF in this build.');
+
 console.log(`Building (${debug ? 'debug' : 'release'})…`);
 execFileSync('cmd', ['/c', '.\\gradlew.bat', debug ? 'assembleDebug' : 'assembleRelease', '--no-daemon'],
   { cwd: 'android', stdio: 'inherit', env });
@@ -70,7 +80,7 @@ const versionName = gradle.match(/versionName\s+"([^"]+)"/)?.[1];
 
 const bytes = readFileSync(built);
 const info = {
-  versionName, versionCode, build: kind,
+  versionName, versionCode, build: kind, push: firebase,
   size: bytes.length,
   sha256: createHash('sha256').update(bytes).digest('hex'),
   builtAt: new Date().toISOString()

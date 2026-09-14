@@ -31,6 +31,8 @@ const SHELL_FILES = [
   '/js/uploader.js',
   '/js/mydetails.js',
   '/js/shrink.js',
+  '/js/push.js',
+  '/js/push-flag.js',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

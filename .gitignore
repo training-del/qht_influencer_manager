@@ -24,6 +24,12 @@ dist/d1-import.sql
 *.keystore
 # the release signing key's passwords — back up with the .jks, never commit
 android/keystore.properties
+# Firebase. The Android config stays on this machine; a service-account key
+# is a password to send notifications as QHT — it goes into `wrangler secret`,
+# never into a file here.
+android/app/google-services.json
+*service-account*.json
+*firebase-adminsdk*.json
 # the published APK and its apk.json: built by scripts/build-apk.mjs, deployed
 # from this folder, too large to belong in git
 public/downloads/

@@ -3,6 +3,7 @@
    downline only (no token editing, no payment release, flag-only review). */
 import { mountUploader } from '/js/uploader.js';
 import { mountMyDetails } from '/js/mydetails.js';
+import { enablePush } from '/js/push.js';
 import {
   api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, roleLabel, statusLabel,
   complianceBar, toast, loadProtectedImage, enablePhotoViewer, mountTopbar, requireUser,
@@ -15,6 +16,8 @@ const me = await requireUser(['admin', 'head_influencer']);
 const isAdmin = me.user.role === 'admin';
 mountTopbar($('#topbar'));
 enablePhotoViewer();              // any proof thumbnail, on any panel, opens full size
+// head influencers: the review summaries, in the Android app; a tap opens the queue
+enablePush(me, screen => { if (screen === 'review') show('submissions'); });
 
 /* ------------------------------ sidebar chrome ------------------------------ */
 const svg = d =>

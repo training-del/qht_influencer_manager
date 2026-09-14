@@ -13,6 +13,7 @@ import userRoutes from './routes/users.js';
 import submissionRoutes from './routes/submissions.js';
 import paymentRoutes from './routes/payments.js';
 import reportRoutes from './routes/reports.js';
+import deviceRoutes from './routes/devices.js';
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/devices', deviceRoutes);
 
 /**
  * Proof photos are private: an influencer sees their own, an admin sees all,

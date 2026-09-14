@@ -7,6 +7,7 @@ import {
 import { mountUploader } from '/js/uploader.js';
 import { mountInstallButton } from '/js/pwa.js';
 import { mountMyDetails, detailsProgress } from '/js/mydetails.js';
+import { enablePush } from '/js/push.js';
 
 const me = await requireUser(['influencer']);
 $('#myName').textContent = me.user.full_name;
@@ -18,6 +19,8 @@ const confirmSignOut = () => {
 };
 $('#signOut').onclick = confirmSignOut;
 enablePhotoViewer();              // their own photos open full size too
+// the 7 PM reminder, in the Android app; tapping it opens Today
+enablePush(me, screen => { if (screen === 'today') show('today'); });
 
 let calMonth = todayStr().slice(0, 7);
 

@@ -1,0 +1,31 @@
+# The scheduled notifications: a small second Worker with no URL of its own.
+#
+# Cloudflare Pages — which serves the app and its API — cannot run anything on
+# a timer, so the 7 PM photo reminder and the review summaries live here. It
+# shares the app's D1 database and nothing else. See src/cron.js and
+# docs/PUSH-NOTIFICATIONS.md.
+#
+#   deploy:   npx wrangler deploy -c worker/wrangler.cron.toml
+#   secret:   npx wrangler secret put FCM_SERVICE_ACCOUNT -c worker/wrangler.cron.toml
+#             (the whole Firebase service-account JSON — never commit it)
+#   logs:     npx wrangler tail -c worker/wrangler.cron.toml
+
+name = "qht-influencer-reminders"
+main = "src/cron.js"
+compatibility_date = "2026-09-01"
+
+# nothing to call over HTTP; it only runs on the schedule below
+workers_dev = false
+
+[triggers]
+# Times are UTC. India is UTC+5:30 all year, so these never drift:
+#   06:30–06:55 UTC = 12:00–12:25 IST   review summaries
+#   13:30–13:55 UTC = 19:00–19:25 IST   photo reminders + review summaries
+# Every 5 minutes for half an hour, so a batch too big for one run (about 45
+# notifications on the free plan) is finished by the next ones.
+crons = ["30-55/5 6 * * *", "30-55/5 13 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qht-influencer"
+database_id = "e1a4f798-abfa-494a-be12-486271a61ca7"

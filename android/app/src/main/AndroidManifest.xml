@@ -34,11 +34,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- notifications: the white bell in the status bar (the launcher icon
+             would show as a grey square) and the channel the server sends to -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="reminders" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android 13+: the 7 PM reminder and the review summaries -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- the daily proof is taken in the WebView via getUserMedia -->
     <uses-permission android:name="android.permission.CAMERA" />
