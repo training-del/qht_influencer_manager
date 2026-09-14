@@ -390,8 +390,18 @@ body.auth {
 .portal-chip.p-influencer { background: #fdf0dd; color: #8a5d25; }
 .change-portal { font-size: .82rem; color: var(--teal-dark); }
 
-.portal-wrong { display: grid; gap: .6rem; }
-.portal-wrong .btn { justify-self: start; }
+/* each span is one line: the sentence stays a sentence (a bare grid made
+   "This is an", "Admin" and "account…" three rows), then where they are going */
+.portal-wrong { display: grid; gap: .35rem; }
+.portal-wrong .pw-go { font-size: .8rem; opacity: .9; }
+.portal-wrong .pw-go a { color: inherit; font-weight: 600; margin-left: .25rem; }
+.portal-wrong .pw-bar {
+  height: 3px; border-radius: 3px; margin-top: .15rem;
+  background: currentColor; opacity: .35; transform-origin: left;
+  animation: pw-fill 1.6s linear both;
+}
+@keyframes pw-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .portal-wrong .pw-bar { animation: none; } }
 
 /* -------------------------------- narrow -------------------------------- */
 @media (max-width: 899px) {

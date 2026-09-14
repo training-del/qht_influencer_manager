@@ -153,12 +153,21 @@
     const PORTAL_FOR_ROLE = { admin: 'admin', head_influencer: 'head', influencer: 'influencer' };
 
     let portal = null;
+    /** the pending move to the right portal after a wrong-portal sign-in */
+    let moveTimer = null;
 
     /* The hash is the state, so the browser's back button, a refresh and a
        shared link all land on the same screen. */
     function route() {
       const key = location.hash.slice(1);
       portal = PORTALS[key] ? key : null;
+
+      /* A message belongs to the portal it was shown on — "this is an Admin
+         account, not Influencer" was still there after arriving at Admin. */
+      clearTimeout(moveTimer);
+      $('#msg').innerHTML = '';
+      // held while a wrong-portal move was pending; any change of portal frees it
+      $('#submitBtn').disabled = false;
 
       $('#chooser').hidden = !!portal;
       $('#signin').hidden = !portal;
@@ -176,7 +185,6 @@
         if (!$('#identifier').value) $('#identifier').focus();
       } else {
         document.title = 'Sign in · QHT Influencer Manager';
-        $('#msg').innerHTML = '';
       }
     }
 
@@ -263,18 +271,29 @@
         });
 
         /* Right password, wrong door. They have proved the account is theirs,
-           so it is fine to say which portal it belongs to — and to take them
-           there with what they typed still filled in. The token is not kept. */
+           so it is fine to say which portal it belongs to — and then to take
+           them there on their own, with what they typed still filled in and
+           the warning gone. The token is not kept: they sign in again there,
+           one tap, so the session always starts from the portal it belongs to. */
         const theirs = PORTAL_FOR_ROLE[res.user.role];
         if (theirs !== portal) {
+          const name = PORTALS[theirs].label;
           $('#msg').innerHTML = `
-            <div class="msg warn portal-wrong">
-              This is ${/^[AEIOU]/.test(PORTALS[theirs].label) ? 'an' : 'a'}
-              <b>${esc(PORTALS[theirs].label)}</b> account, not ${esc(PORTALS[portal].label)}.
-              <a href="#${theirs}" class="btn sm" id="goRightPortal">Go to the ${esc(PORTALS[theirs].label)} portal</a>
+            <div class="msg warn portal-wrong" role="status">
+              <span>This is ${/^[AEIOU]/.test(name) ? 'an' : 'a'} <b>${esc(name)}</b> account,
+                not ${esc(PORTALS[portal].label)}.</span>
+              <span class="pw-go">Taking you to the ${esc(name)} portal…
+                <a href="#${theirs}" id="goRightPortal">Go now</a></span>
+              <span class="pw-bar" aria-hidden="true"></span>
             </div>`;
-          btn.disabled = false;
-          btn.textContent = label;
+          btn.textContent = `Opening the ${name} portal…`;
+          moveTimer = setTimeout(() => { location.hash = theirs; }, 1600);
+          /* route() clears the warning and the timer; the details stay typed,
+             so the next thing to press is Sign in */
+          window.addEventListener('hashchange', () => {
+            btn.disabled = false;
+            if (location.hash.slice(1) === theirs) btn.focus();
+          }, { once: true });
           return;
         }
 
