@@ -12,7 +12,7 @@
    new service worker when this file's bytes change, and the cache is named
    after this value — so a deploy invalidates the old shell instead of leaving
    yesterday's JavaScript to be served one more time. */
-const VERSION = '20260914054528';
+const VERSION = '20260914063416';
 const SHELL = `shell-${VERSION}`;
 
 const SHELL_FILES = [
