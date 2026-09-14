@@ -155,6 +155,8 @@
     let portal = null;
     /** the pending move to the right portal after a wrong-portal sign-in */
     let moveTimer = null;
+    /** how long the wrong-portal warning stays up — long enough to read */
+    const MOVE_SECONDS = 10;
 
     /* The hash is the state, so the browser's back button, a refresh and a
        shared link all land on the same screen. */
@@ -282,12 +284,24 @@
             <div class="msg warn portal-wrong" role="status">
               <span>This is ${/^[AEIOU]/.test(name) ? 'an' : 'a'} <b>${esc(name)}</b> account,
                 not ${esc(PORTALS[portal].label)}.</span>
-              <span class="pw-go">Taking you to the ${esc(name)} portal…
+              <span class="pw-go">Taking you to the ${esc(name)} portal in
+                <b class="pw-secs" aria-hidden="true">${MOVE_SECONDS}</b>s…
                 <a href="#${theirs}" id="goRightPortal">Go now</a></span>
-              <span class="pw-bar" aria-hidden="true"></span>
+              <span class="pw-bar" aria-hidden="true" style="animation-duration:${MOVE_SECONDS}s"></span>
             </div>`;
           btn.textContent = `Opening the ${name} portal…`;
-          moveTimer = setTimeout(() => { location.hash = theirs; }, 1600);
+
+          /* Counted from a fixed end time rather than by adding up ticks, so a
+             busy phone cannot stretch the wait. route() cancels it. */
+          const leaveAt = Date.now() + MOVE_SECONDS * 1000;
+          const tick = () => {
+            const left = Math.ceil((leaveAt - Date.now()) / 1000);
+            if (left <= 0) { location.hash = theirs; return; }
+            const secs = $('#msg .pw-secs');
+            if (secs) secs.textContent = left;
+            moveTimer = setTimeout(tick, 250);
+          };
+          moveTimer = setTimeout(tick, 250);
           /* route() clears the warning and the timer; the details stay typed,
              so the next thing to press is Sign in */
           window.addEventListener('hashchange', () => {

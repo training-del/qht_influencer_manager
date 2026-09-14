@@ -398,7 +398,8 @@ body.auth {
 .portal-wrong .pw-bar {
   height: 3px; border-radius: 3px; margin-top: .15rem;
   background: currentColor; opacity: .35; transform-origin: left;
-  animation: pw-fill 1.6s linear both;
+  /* the page sets the real duration (MOVE_SECONDS); this is the fallback */
+  animation: pw-fill 10s linear both;
 }
 @keyframes pw-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .portal-wrong .pw-bar { animation: none; } }
