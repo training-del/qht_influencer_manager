@@ -1,18 +1,20 @@
 /**
  * Notifications in the Android app.
  *
- * After sign-in, influencers and head influencers are asked once for permission;
+ * After sign-in, everyone is asked once for permission;
  * the app's Firebase token is then saved on the server, which is what the
  * scheduled Worker sends to (worker/src/cron.js). Signing out removes it
  * (see auth.logout). Tapping a notification opens the screen it is about.
  *
- * Does nothing on the website, for the admin, or in an APK built without
- * Firebase — see push-flag.js.
+ * Does nothing on the website, or in an APK built without Firebase — see
+ * push-flag.js.
  */
 import { api, PUSH_KEY } from '/js/api.js';
 import { PUSH_READY } from '/js/push-flag.js';
 
-const ROLES = ['influencer', 'head_influencer'];
+/* everyone gets something: influencers their reminders, heads their team's
+   photos, the admin the head influencers' photos */
+const ROLES = ['influencer', 'head_influencer', 'admin'];
 
 /**
  * @param {object} me                         /auth/me result

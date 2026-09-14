@@ -16,8 +16,8 @@ const me = await requireUser(['admin', 'head_influencer']);
 const isAdmin = me.user.role === 'admin';
 mountTopbar($('#topbar'));
 enablePhotoViewer();              // any proof thumbnail, on any panel, opens full size
-// head influencers, in the Android app: a review summary opens the queue,
-// their own rejected photo opens My Daily Proof
+// in the Android app: a review summary or a new photo to review opens the queue
+// (head influencers and the admin); a head's own rejected photo opens My Daily Proof
 enablePush(me, screen => {
   if (screen === 'review') show('submissions');
   else if (screen === 'myproof') show('myproof');

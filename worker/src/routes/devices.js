@@ -2,9 +2,10 @@
  * The phones that get notifications.
  *
  * The Android app registers its Firebase token here after someone signs in,
- * and removes it when they sign out. Only influencers and head influencers get
- * notifications (the 7 PM photo reminder, the review summaries), so only they
- * can register. The sending is done by the scheduled Worker — see src/cron.js.
+ * and removes it when they sign out. Everyone can: influencers (the 7 PM
+ * reminder, a rejected photo), head influencers (review summaries, their
+ * team's new photos) and the admin (head influencers' new photos). The sending
+ * is done by the scheduled Worker — see src/cron.js.
  */
 import { HttpError, assertRole } from '../access.js';
 
@@ -17,7 +18,8 @@ const isToken = t =>
   typeof t === 'string' && t.length >= 20 && t.length <= 4096 && /^[\w:.\-]+$/.test(t);
 
 async function register({ request, env, user, json }) {
-  assertRole(user, 'influencer', 'head_influencer');
+  // the admin too: a head influencer's new photo is theirs to review
+  assertRole(user, 'influencer', 'head_influencer', 'admin');
   const { token, platform = 'android' } = await jsonBody(request);
   if (!isToken(token)) throw new HttpError(400, 'Not a valid device token');
   if (platform !== 'android') throw new HttpError(400, 'Notifications are only sent to the Android app');

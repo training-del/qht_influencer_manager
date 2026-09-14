@@ -102,6 +102,28 @@ export function messageFor(kind, person) {
     };
   }
 
+  if (kind === 'proof_submitted') {
+    // person.photos: every new photo for this reviewer in this run, folded into one
+    const photos = person.photos || [];
+    const names = [...new Set(photos.map(p => String(p.sender_name || 'Someone').trim()))];
+    if (photos.length === 1) {
+      const p = photos[0];
+      return {
+        title: 'New photo to review',
+        body: `${names[0]} sent ${p.submission_date === person.today
+          ? 'today’s proof photo' : `a proof photo for ${dayLabel(p.submission_date)}`}.`,
+        data: { screen: 'review' }
+      };
+    }
+    return {
+      title: 'New photos to review',
+      body: names.length === 1
+        ? `${names[0]} sent ${photos.length} proof photos.`
+        : `${names[0]} and ${names.length - 1} other${names.length === 2 ? '' : 's'} sent proof photos.`,
+      data: { screen: 'review' }
+    };
+  }
+
   if (kind === 'proof_rejected') {
     const isToday = person.submission_date === person.today;
     let reason = String(person.review_note || '').replace(/\s+/g, ' ').trim().replace(/[.!\s]+$/, '');
@@ -199,10 +221,11 @@ export async function runOutbox(env, at = new Date(), fetchImpl = fetch) {
 
   const { results: rows } = await env.DB.prepare(
     `SELECT o.id, o.user_id, o.kind, o.attempts, u.role,
-            s.submission_date, s.review_note, s.status AS sub_status
+            s.submission_date, s.review_note, s.status AS sub_status, su.full_name AS sender_name
        FROM notification_outbox o
        JOIN users u ON u.id = o.user_id
        LEFT JOIN daily_submissions s ON s.id = o.submission_id
+       LEFT JOIN users su ON su.id = s.user_id
       WHERE o.sent_at IS NULL AND o.attempts < ?1
       ORDER BY o.id
       LIMIT 50`
@@ -216,30 +239,58 @@ export async function runOutbox(env, at = new Date(), fetchImpl = fetch) {
   const finish = id => env.DB.prepare(
     `UPDATE notification_outbox SET sent_at = datetime('now') WHERE id = ?1`).bind(id).run();
 
+  /* Still worth saying? A rejection changed back, or a new photo already
+     reviewed, is dropped without a word. */
+  const stillTrue = row =>
+    row.kind === 'proof_rejected' ? row.sub_status === 'rejected'
+      : row.kind === 'proof_submitted' ? row.sub_status === 'pending'
+        : true;
+
+  /* New-photo alerts for the same reviewer become one notification; every
+     other kind goes one row at a time. */
+  const batches = [];
+  const newPhotosFor = new Map();
   for (const row of rows) {
-    // changed their mind: the photo is no longer rejected, so there is nothing to say
-    if (row.kind === 'proof_rejected' && row.sub_status !== 'rejected') {
-      await finish(row.id);
-      report.dropped++;
+    if (!stillTrue(row)) { await finish(row.id); report.dropped++; continue; }
+    if (row.kind === 'proof_submitted') {
+      if (!newPhotosFor.has(row.user_id)) {
+        const batch = { kind: row.kind, user_id: row.user_id, rows: [] };
+        newPhotosFor.set(row.user_id, batch);
+        batches.push(batch);
+      }
+      newPhotosFor.get(row.user_id).rows.push(row);
+    } else {
+      batches.push({ kind: row.kind, user_id: row.user_id, rows: [row] });
+    }
+  }
+
+  for (const batch of batches) {
+    const { results: devices } = await env.DB.prepare(
+      'SELECT token FROM device_tokens WHERE user_id = ?1 ORDER BY id').bind(batch.user_id).all();
+    const tokens = devices.map(d => d.token);
+    if (!tokens.length) {                                        // no app to tell
+      for (const row of batch.rows) await finish(row.id);
       continue;
     }
-
-    const { results: devices } = await env.DB.prepare(
-      'SELECT token FROM device_tokens WHERE user_id = ?1 ORDER BY id').bind(row.user_id).all();
-    const tokens = devices.map(d => d.token);
-    if (!tokens.length) { await finish(row.id); continue; }          // no app to tell
     if (!sender.fits(tokens.length)) { report.more = true; break; }
 
     /* Claimed before sending: if two runs ever overlap, only the one whose
-       update lands sends it. */
-    const claim = await env.DB.prepare(
-      `UPDATE notification_outbox SET attempts = attempts + 1
-        WHERE id = ?1 AND sent_at IS NULL AND attempts = ?2`
-    ).bind(row.id, row.attempts).run();
-    if (!claim.meta.changes) continue;
+       update lands sends a row. */
+    const claimed = [];
+    for (const row of batch.rows) {
+      const claim = await env.DB.prepare(
+        `UPDATE notification_outbox SET attempts = attempts + 1
+          WHERE id = ?1 AND sent_at IS NULL AND attempts = ?2`
+      ).bind(row.id, row.attempts).run();
+      if (claim.meta.changes) claimed.push(row);
+    }
+    if (!claimed.length) continue;
 
-    const { delivered, tryAgain } = await sender.send(tokens, messageFor(row.kind, { ...row, today }));
-    if (delivered || !tryAgain) await finish(row.id);
+    const msg = batch.kind === 'proof_submitted'
+      ? messageFor(batch.kind, { photos: claimed, today })
+      : messageFor(batch.kind, { ...claimed[0], today });
+    const { delivered, tryAgain } = await sender.send(tokens, msg);
+    if (delivered || !tryAgain) for (const row of claimed) await finish(row.id);
   }
 
   // sent notices are not needed after a month

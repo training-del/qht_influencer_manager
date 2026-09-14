@@ -13,7 +13,7 @@ const isToken = t =>
 const r = Router();
 r.use(authenticate);
 
-r.post('/', requireRole('influencer', 'head_influencer'), (req, res) => {
+r.post('/', requireRole('influencer', 'head_influencer', 'admin'), (req, res) => {
   const { token, platform = 'android' } = req.body || {};
   if (!isToken(token)) return res.status(400).json({ error: 'Not a valid device token' });
   if (platform !== 'android') {

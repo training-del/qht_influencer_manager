@@ -28,6 +28,21 @@ const today = () => todayIST();     // the Worker's clock is UTC; the programme'
 const placeholders = (n, from = 1) =>
   Array.from({ length: n }, (_, i) => `?${i + from}`).join(',');
 
+/**
+ * The person directly above the sender — their head influencer, or the admin
+ * for a head (or for an influencer registered straight under the admin) —
+ * hears about a new photo within a minute: queued here, sent by the reminders
+ * Worker (worker/src/cron.js, runOutbox), which folds several into one. A photo
+ * replaced before that minute is up does not queue a second alert.
+ */
+const notifyReviewer = (env, user, submissionId) => env.DB.prepare(
+  `INSERT INTO notification_outbox (user_id, kind, submission_id)
+   SELECT u.parent_id, 'proof_submitted', ?1 FROM users u
+    WHERE u.id = ?2 AND u.parent_id IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM notification_outbox o
+                       WHERE o.submission_id = ?1 AND o.kind = 'proof_submitted' AND o.sent_at IS NULL)`
+).bind(submissionId, user.id).run();
+
 /* --------------------- send today's proof (influencer or head) --------------------- */
 /**
  * One submission per calendar day; sending again the same day replaces the
@@ -80,6 +95,7 @@ async function submit({ request, env, user, json }) {
     // only after the row points at the new photo, or a failure would lose both;
     // the old one goes to trash, recoverable for 30 days
     await discard(env, existing.photo_path, 'replaced proof');
+    await notifyReviewer(env, user, existing.id);   // back in the queue, so worth a look again
     await audit(env, user.id, 'resubmit_proof', 'daily_submissions', existing.id, { date });
     return json({ ok: true, replaced: true, id: existing.id, date });
   }
@@ -88,6 +104,7 @@ async function submit({ request, env, user, json }) {
     'INSERT INTO daily_submissions (user_id, submission_date, photo_path, note) VALUES (?1,?2,?3,?4)'
   ).bind(user.id, date, key, note).run();
 
+  await notifyReviewer(env, user, info.meta.last_row_id);
   await audit(env, user.id, 'submit_proof', 'daily_submissions', info.meta.last_row_id, { date });
   return json({ ok: true, id: info.meta.last_row_id, date }, 201);
 }
