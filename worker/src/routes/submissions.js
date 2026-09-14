@@ -12,6 +12,13 @@ import {
 import { complianceFor } from '../lib/compliance.js';
 import { discard } from '../lib/trash.js';
 import { todayIST } from '../lib/time.js';
+import { runOutbox } from '../lib/notifications.js';
+
+/* Send what was just queued straight away, after the response has gone — the
+   reminders Worker's every-minute run is only the fallback. Without the
+   Firebase key on this project it skips, and the queue keeps the row. */
+const sendNow = (env, ctx) =>
+  ctx?.waitUntil?.(runOutbox(env).catch(err => console.error('notify now failed', String(err?.message || err))));
 
 const audit = (env, actorId, action, entity, entityId, meta) =>
   env.DB.prepare(
@@ -50,7 +57,7 @@ const notifyReviewer = (env, user, submissionId) => env.DB.prepare(
  * daily consumption, daily photo — so they send proof too. Only the admin has
  * none to give.
  */
-async function submit({ request, env, user, json }) {
+async function submit({ request, env, ctx, user, json }) {
   gate(user);
   assertRole(user, 'influencer', 'head_influencer');
 
@@ -96,6 +103,7 @@ async function submit({ request, env, user, json }) {
     // the old one goes to trash, recoverable for 30 days
     await discard(env, existing.photo_path, 'replaced proof');
     await notifyReviewer(env, user, existing.id);   // back in the queue, so worth a look again
+    sendNow(env, ctx);
     await audit(env, user.id, 'resubmit_proof', 'daily_submissions', existing.id, { date });
     return json({ ok: true, replaced: true, id: existing.id, date });
   }
@@ -105,6 +113,7 @@ async function submit({ request, env, user, json }) {
   ).bind(user.id, date, key, note).run();
 
   await notifyReviewer(env, user, info.meta.last_row_id);
+  sendNow(env, ctx);
   await audit(env, user.id, 'submit_proof', 'daily_submissions', info.meta.last_row_id, { date });
   return json({ ok: true, id: info.meta.last_row_id, date }, 201);
 }
@@ -171,7 +180,7 @@ async function queue({ env, url, user, json }) {
  * admin reviews everyone, and nobody reviews their own photo — signing off on
  * your own evidence is not a review.
  */
-async function review({ request, env, params, user, json }) {
+async function review({ request, env, ctx, params, user, json }) {
   gate(user);
   assertRole(user, 'admin', 'head_influencer');
 
@@ -203,6 +212,7 @@ async function review({ request, env, params, user, json }) {
     await env.DB.prepare(
       `INSERT INTO notification_outbox (user_id, kind, submission_id) VALUES (?1, 'proof_rejected', ?2)`
     ).bind(sub.user_id, sub.id).run();
+    sendNow(env, ctx);
   }
 
   await audit(env, user.id, 'review_submission', 'daily_submissions', sub.id, { status: b.status });

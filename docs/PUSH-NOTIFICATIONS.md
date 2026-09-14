@@ -9,9 +9,19 @@ What gets sent, all on Indian time:
 | Within a minute of a new photo | The person directly above the sender: the head influencer for an influencer, the admin for a head (or for an influencer registered straight under the admin). Several photos in the same minute are one notification. | "Priya Nair sent today's proof photo" / "Priya Nair and 2 others sent proof photos" | Review queue |
 | Within a minute of a rejection | The person whose photo was rejected (influencer, or a head whose own photo the admin rejected) | "Your photo for 11 Sept was rejected: *reason*. Please send a new one." | Today / History / My Daily Proof |
 
-A rejection is queued by the API (`notification_outbox`, migration 0003) and sent by the
-reminders Worker's every-minute schedule — so the website needs no Firebase key of its own.
-A rejection changed back to approved before it is sent sends nothing.
+Rejections and new photos are queued by the API (`notification_outbox`, migration 0003) and
+sent **by the website itself, straight after the request** (`ctx.waitUntil`). For that the
+website's Pages project needs its own copy of the key:
+
+    Get-Content "<path to a Firebase service-account key>.json" -Raw | npx wrangler pages secret put FCM_SERVICE_ACCOUNT --project-name qht-influencer
+
+The reminders Worker's every-minute schedule sends anything the website could not, as a
+fallback. A rejection changed back to approved before it is sent sends nothing.
+
+Known issue (2026-09-14): the Worker's Cron Triggers were saved on Cloudflare but no scheduled
+run ever arrived, so the 12 PM / 7 PM reminders and the fallback do not run until that is
+fixed in the Cloudflare dashboard. Every run that does something writes a
+`notifications_run` line to `audit_log`.
 
 Only the Android app gets them.
 
