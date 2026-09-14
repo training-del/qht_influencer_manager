@@ -46,6 +46,9 @@ const env = {
   Path: `${JAVA_HOME}/bin;${process.env.Path ?? ''}`
 };
 
+// the dark theme is generated from the light CSS — never ship a stale copy
+execFileSync('node', ['scripts/make-dark-css.mjs'], { stdio: 'inherit' });
+
 console.log('Syncing web assets and config into the Android project…');
 execFileSync('npx', ['cap', 'sync', 'android'], { stdio: 'inherit', shell: true });
 

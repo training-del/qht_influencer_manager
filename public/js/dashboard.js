@@ -4,6 +4,7 @@
 import { mountUploader } from '/js/uploader.js';
 import { mountMyDetails } from '/js/mydetails.js';
 import { enablePush } from '/js/push.js';
+import { THEME_BUTTON } from '/js/theme.js';
 import {
   api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, roleLabel, statusLabel,
   complianceBar, toast, loadProtectedImage, enablePhotoViewer, mountTopbar, requireUser,
@@ -82,6 +83,7 @@ $('#sideFoot').innerHTML = `
     <span class="who-name">${esc(me.user.full_name)}</span>
     <span class="who-role">${esc(roleLabel(me.user.role))}</span>
   </span>
+  ${THEME_BUTTON('side-theme')}
   <button class="out" id="sideOut" title="Sign out" aria-label="Sign out">${svg('<path d="M15 17l5-5-5-5M20 12H9M11 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/>')}</button>`;
 $('#sideOut').onclick = () => auth.logout();
 
@@ -1109,7 +1111,7 @@ async function renderSubmissions() {
         <span><i style="background:var(--green)"></i>approved</span>
         <span><i style="background:var(--amber)"></i>pending</span>
         <span><i style="background:var(--red)"></i>rejected</span>
-        <span><i style="background:#fb923c"></i>flagged</span>
+        <span><i class="lg-flagged-dot"></i>flagged</span>
       </div>
       <div id="dayPanel" style="margin-top:1rem"></div>`;
 

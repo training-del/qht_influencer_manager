@@ -33,6 +33,8 @@ const SHELL_FILES = [
   '/js/shrink.js',
   '/js/push.js',
   '/js/push-flag.js',
+  '/js/theme.js',
+  '/css/dark.css',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

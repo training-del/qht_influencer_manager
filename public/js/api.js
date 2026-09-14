@@ -1,6 +1,8 @@
 /* Shared API client + tiny DOM helpers used by every screen. */
 
 import { apiUrl } from '/js/config.js';
+// light / dark mode: every page that uses the API gets the switch working
+import { THEME_BUTTON } from '/js/theme.js';
 
 const TOKEN_KEY = 'qht_token';
 /** this phone's notification token, once registered (see push.js) */
@@ -473,5 +475,6 @@ export function mountTopbar(el) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <div class="brand"><span class="qht-mark" aria-hidden="true"></span> QHT Influencer Manager</div>`;
+    <div class="brand"><span class="qht-mark" aria-hidden="true"></span> QHT Influencer Manager</div>
+    ${THEME_BUTTON()}`;
 }

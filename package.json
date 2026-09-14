@@ -19,7 +19,8 @@
     "app:apk": "node scripts/build-apk.mjs",
     "cert": "node scripts/make-cert.mjs",
     "start:https": "node scripts/start-https.mjs",
-    "deploy": "node scripts/stamp-sw.mjs && npx wrangler pages deploy",
+    "dark-css": "node scripts/make-dark-css.mjs",
+    "deploy": "node scripts/make-dark-css.mjs && node scripts/stamp-sw.mjs && npx wrangler pages deploy",
     "deploy:schema": "cd worker && npx wrangler d1 migrations apply qht-influencer --remote",
     "deploy:list": "npx wrangler pages deployment list --project-name qht-influencer",
     "deploy:log": "npx wrangler pages deployment tail --project-name qht-influencer"

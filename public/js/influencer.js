@@ -182,10 +182,10 @@ async function renderHistory() {
       </div>
       <div class="cal">${cells}</div>
       <div class="legend" style="margin-top:.8rem">
-        <span><i style="background:#d1fae5;border:1px solid #6ee7b7"></i>Approved</span>
-        <span><i style="background:#fef3c7;border:1px solid #fcd34d"></i>Pending</span>
-        <span><i style="background:#fee2e2;border:1px solid #fca5a5"></i>Rejected</span>
-        <span><i style="background:#fff1f2;border:1px solid #fecdd3"></i>Missed</span>
+        <span><i class="lg-approved"></i>Approved</span>
+        <span><i class="lg-pending"></i>Pending</span>
+        <span><i class="lg-rejected"></i>Rejected</span>
+        <span><i class="lg-missed"></i>Missed</span>
       </div>
     </div>
 

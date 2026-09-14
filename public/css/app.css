@@ -112,6 +112,27 @@ p { margin: 0 0 .75rem; }
 }
 .bar-out svg { width: 17px; height: 17px; }
 
+/* light / dark switch — the moon shows in light mode, the sun in dark
+   (colours for the dark theme come from css/dark.css) */
+.theme-btn {
+  flex: 0 0 auto; width: 34px; height: 34px; padding: 0; cursor: pointer;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, .82); border: 1px solid #74a89e;
+  border-radius: 9px; color: #1f544e;
+  transition: background .14s ease, color .14s ease;
+}
+.theme-btn:hover { background: #ffffff; }
+.theme-btn:focus-visible { outline: 2px solid var(--teal-dark); outline-offset: 2px; }
+.theme-btn svg { width: 17px; height: 17px; }
+.theme-btn .i-sun { display: none; }
+html[data-theme="dark"] .theme-btn .i-sun { display: block; }
+html[data-theme="dark"] .theme-btn .i-moon { display: none; }
+/* the dashboard's phone bar: brand, then the switch on the right */
+.topbar .brand + .theme-btn { margin-left: auto; }
+/* in the sidebar footer it sits beside sign-out, quieter */
+.sidenav .theme-btn { background: transparent; border-color: var(--line); color: var(--muted); width: 32px; height: 32px; }
+.sidenav .theme-btn:hover { color: var(--ink); background: var(--bg); }
+
 /* Below ~380px the title wraps to two lines and the name truncates to
    "Priya …". The product name is the one that has to stay readable — the
    signed-in name is on the Profile tab, right under this bar. */
@@ -1504,6 +1525,12 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + var(--sab)); }
 .cal .day .tick { font-size: .62rem; line-height: 1; }
 .legend { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .75rem; color: var(--muted); }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: .25rem; vertical-align: -1px; }
+/* legend swatches match the calendar days above — in CSS, so the dark theme reaches them */
+.legend i.lg-approved { background: var(--green-soft); border: 1px solid #6ee7b7; }
+.legend i.lg-pending  { background: var(--amber-soft); border: 1px solid #fcd34d; }
+.legend i.lg-rejected { background: var(--red-soft); border: 1px solid #fca5a5; }
+.legend i.lg-missed   { background: #fff1f2; border: 1px solid #fecdd3; }
+.legend i.lg-flagged-dot { background: #fb923c; }
 
 /* --------------------------------- messages --------------------------------- */
 .msg { padding: .65rem .8rem; border-radius: 9px; font-size: .86rem; margin-bottom: .75rem; }
