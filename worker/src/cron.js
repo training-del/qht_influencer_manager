@@ -300,19 +300,43 @@ export async function runOutbox(env, at = new Date(), fetchImpl = fetch) {
   return report;
 }
 
+/* Every run that did something — or failed — leaves a line in audit_log
+   (action "notifications_run"), so a silent failure shows up in the database
+   without anyone watching a live tail. Writing the line must never be what
+   breaks the run. Error messages here never contain the key itself. */
+async function record(env, meta) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO audit_log (actor_id, action, entity, entity_id, meta)
+       VALUES (NULL, 'notifications_run', 'cron', NULL, ?1)`
+    ).bind(JSON.stringify(meta).slice(0, 2000)).run();
+  } catch { /* nothing else to do */ }
+}
+
+/** One scheduled run, start to finish. Exported so it can be tested. */
+export async function handleScheduled(event, env, fetchImpl = fetch) {
+  const at = new Date(event.scheduledTime || Date.now());
+  const outbox = taskFor(event.cron) === 'outbox';
+  try {
+    const r = await (outbox ? runOutbox(env, at, fetchImpl) : runScheduled(env, at, fetchImpl));
+    // the minute runs are silent unless they did something
+    const quiet = outbox && !r.sent && !r.removed && !r.retry && !r.dropped && !r.skipped && !r.more;
+    if (!quiet) {
+      console.log('notifications', JSON.stringify(r));
+      await record(env, { cron: event.cron, at: at.toISOString(), ...r });
+    }
+    return r;
+  } catch (err) {
+    const error = String(err?.message || err);
+    console.error('notifications failed', error);
+    await record(env, { cron: event.cron, at: at.toISOString(), error });
+    return { error };
+  }
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    const at = new Date(event.scheduledTime);
-    const outbox = taskFor(event.cron) === 'outbox';
-    ctx.waitUntil(
-      (outbox ? runOutbox(env, at) : runScheduled(env, at))
-        .then(r => {
-          // the minute runs are silent unless they did something
-          const quiet = outbox && !r.sent && !r.removed && !r.retry && !r.dropped && !r.skipped;
-          if (!quiet) console.log('notifications', JSON.stringify(r));
-        })
-        .catch(err => console.error('notifications failed', err))
-    );
+    ctx.waitUntil(handleScheduled(event, env));
   },
   // no URL is published for this Worker (workers_dev = false); answer nothing anyway
   async fetch() {
