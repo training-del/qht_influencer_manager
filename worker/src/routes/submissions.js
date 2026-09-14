@@ -12,13 +12,13 @@ import {
 import { complianceFor } from '../lib/compliance.js';
 import { discard } from '../lib/trash.js';
 import { todayIST } from '../lib/time.js';
-import { runOutbox } from '../lib/notifications.js';
+import { sendQueuedNow } from '../lib/notifications.js';
 
 /* Send what was just queued straight away, after the response has gone — the
    reminders Worker's every-minute run is only the fallback. Without the
-   Firebase key on this project it skips, and the queue keeps the row. */
-const sendNow = (env, ctx) =>
-  ctx?.waitUntil?.(runOutbox(env).catch(err => console.error('notify now failed', String(err?.message || err))));
+   Firebase key on this project it skips, and the queue keeps the row; either
+   way the outcome is written to audit_log (notifications_run, source website). */
+const sendNow = (env, ctx) => ctx?.waitUntil?.(sendQueuedNow(env));
 
 const audit = (env, actorId, action, entity, entityId, meta) =>
   env.DB.prepare(

@@ -307,13 +307,32 @@ export async function runOutbox(env, at = new Date(), fetchImpl = fetch) {
    (action "notifications_run"), so a silent failure shows up in the database
    without anyone watching a live tail. Writing the line must never be what
    breaks the run. Error messages here never contain the key itself. */
-async function record(env, meta) {
+export async function recordRun(env, meta) {
   try {
     await env.DB.prepare(
       `INSERT INTO audit_log (actor_id, action, entity, entity_id, meta)
        VALUES (NULL, 'notifications_run', 'cron', NULL, ?1)`
     ).bind(JSON.stringify(meta).slice(0, 2000)).run();
   } catch { /* nothing else to do */ }
+}
+
+/**
+ * The website's own send, straight after something was queued (an upload, a
+ * rejection). Leaves the same notifications_run line as a scheduled run —
+ * with source "website" — whenever it sends, skips or fails, so a missing or
+ * broken key shows up in the database instead of vanishing into a log.
+ */
+export async function sendQueuedNow(env, fetchImpl = fetch) {
+  try {
+    const r = await runOutbox(env, new Date(), fetchImpl);
+    const quiet = !r.sent && !r.removed && !r.retry && !r.dropped && !r.skipped && !r.more;
+    if (!quiet) await recordRun(env, { source: 'website', at: new Date().toISOString(), ...r });
+    return r;
+  } catch (err) {
+    const error = String(err?.message || err);
+    await recordRun(env, { source: 'website', at: new Date().toISOString(), error });
+    return { error };
+  }
 }
 
 /** One scheduled run, start to finish. Exported so it can be tested. */
@@ -326,13 +345,13 @@ export async function handleScheduled(event, env, fetchImpl = fetch) {
     const quiet = outbox && !r.sent && !r.removed && !r.retry && !r.dropped && !r.skipped && !r.more;
     if (!quiet) {
       console.log('notifications', JSON.stringify(r));
-      await record(env, { cron: event.cron, at: at.toISOString(), ...r });
+      await recordRun(env,{ cron: event.cron, at: at.toISOString(), ...r });
     }
     return r;
   } catch (err) {
     const error = String(err?.message || err);
     console.error('notifications failed', error);
-    await record(env, { cron: event.cron, at: at.toISOString(), error });
+    await recordRun(env,{ cron: event.cron, at: at.toISOString(), error });
     return { error };
   }
 }
