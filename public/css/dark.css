@@ -767,12 +767,6 @@ html[data-theme="dark"] .terms-head {
 html[data-theme="dark"] .terms-head h1 {
   color: #ffffff;
 }
-html[data-theme="dark"] .token-box {
-  border: 1px solid #3f8278;
-}
-html[data-theme="dark"] .token-box .amt {
-  color: #c6edeb;
-}
 html[data-theme="dark"] .sticky-accept {
   background: #141a24;
   box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.06);
