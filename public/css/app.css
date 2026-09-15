@@ -1524,6 +1524,9 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + var(--sab)); }
 /* saved: a moment of solid teal, so it is obvious the file left the page */
 .proof-dl.done { background: var(--teal); border-color: var(--teal); color: #fff; }
 /* and rose when it could not be saved, matching the delete accents */
+/* in the review queue it sits under the thumbnail, not in a card footer */
+.proof-dl.qthumb-dl { margin: .3rem 0 0; }
+
 .proof-dl.failed { background: #f8ecec; border-color: #e5c9c7; color: #a04f4a; }
 
 /* --------------------------------- calendar --------------------------------- */

@@ -426,6 +426,23 @@ async function renderHierarchy() {
 }
 
 /* {influencer}_{date}_{status}.jpg — kept plain so it sorts and types easily */
+/** Wires every download button under a container (person sheet, review queue). */
+function wireProofDownloads(root) {
+  $$(".proof-dl", root).forEach(btn => btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      await downloadProtectedImage(btn.dataset.dl, btn.dataset.file,
+        btn.closest("td, .proof")?.querySelector("img"));
+      btn.classList.add("done");
+      setTimeout(() => btn.classList.remove("done"), 1600);
+    } catch {
+      btn.classList.add("failed");
+      btn.title = "Could not save that photo — try again";
+      setTimeout(() => btn.classList.remove("failed"), 2400);
+    } finally { btn.disabled = false; }
+  });
+}
+
 const proofFileName = (name, s) =>
   [String(name).trim().replace(/[^\w.-]+/g, '_'), s.submission_date, s.status]
     .join("_").replace(/_+/g, "_") + ".jpg";
@@ -951,6 +968,7 @@ async function renderSubmissions() {
   const wire = () => {
     $$('#subBody [data-act]').forEach(b => b.onclick = () => act(Number(b.dataset.id), b.dataset.act));
     $$('#subBody img[data-p]').forEach(img => loadProtectedImage(img, img.dataset.p));
+    wireProofDownloads($('#subBody'));
   };
 
   const query = extra => {
@@ -979,7 +997,12 @@ async function renderSubmissions() {
           <tbody>${rows.map(s => `
             <tr>
               <td><img class="qthumb" data-p="${esc(s.photo_path)}" alt="Proof by ${esc(s.full_name)}"
-                       data-cap="${esc(`${s.full_name} · ${fmtDate(s.submission_date)} · ${fmtTime(s.captured_at)}`)}"></td>
+                       data-cap="${esc(`${s.full_name} · ${fmtDate(s.submission_date)} · ${fmtTime(s.captured_at)}`)}">
+                  <button class="proof-dl qthumb-dl" type="button" data-dl="${esc(s.photo_path)}"
+                          data-file="${esc(proofFileName(s.full_name, s))}"
+                          title="Save this photo" aria-label="Save the photo of ${esc(s.full_name)}">
+                    ${svg('<path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>')}
+                  </button></td>
               <td class="name"><b>${esc(s.full_name)}</b>
                 <div class="tiny muted">${esc(roleLabel(s.role))} · ${esc(s.parent_name || 'QHT Admin')}</div></td>
               <td class="small">${esc(fmtDate(s.submission_date))}
@@ -1520,22 +1543,7 @@ async function openPerson(id) {
 
   $$('#personProofs img').forEach(img => loadProtectedImage(img, img.dataset.p));
 
-  /* save a copy of a proof photo to this computer */
-  $$('#personProofs .proof-dl').forEach(btn => btn.onclick = async () => {
-    const card = btn.closest('.proof');
-    btn.disabled = true;
-    try {
-      await downloadProtectedImage(btn.dataset.dl, btn.dataset.file, card.querySelector('img'));
-      btn.classList.add('done');
-      setTimeout(() => btn.classList.remove('done'), 1600);
-    } catch {
-      btn.classList.add('failed');
-      btn.title = 'Could not save that photo — try again';
-      setTimeout(() => btn.classList.remove('failed'), 2400);
-    } finally {
-      btn.disabled = false;
-    }
-  });
+  wireProofDownloads($("#personProofs"));
 
   if (isAdmin) {
     $('#saveTok').onclick = async () => {
