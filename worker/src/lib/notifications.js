@@ -109,20 +109,28 @@ export function messageFor(kind, person) {
     // person.photos: every new photo for this reviewer in this run, folded into one
     const photos = person.photos || [];
     const names = [...new Set(photos.map(p => String(p.sender_name || 'Someone').trim()))];
+    /* A photo for an earlier day is worth saying out loud: it changes a day
+       already counted as missed, so the reviewer should look sooner. */
+    const late = photos.filter(p => p.submission_date < person.today);
     if (photos.length === 1) {
       const p = photos[0];
+      const when = p.submission_date === person.today
+        ? 'today’s proof photo'
+        : `a proof photo for ${dayLabel(p.submission_date)} — an earlier day`;
       return {
-        title: 'New photo to review',
-        body: `${names[0]} sent ${p.submission_date === person.today
-          ? 'today’s proof photo' : `a proof photo for ${dayLabel(p.submission_date)}`}.`,
+        title: late.length ? 'Photo for an earlier day' : 'New photo to review',
+        body: `${names[0]} sent ${when}.`,
         data: { screen: 'review' }
       };
     }
+    const who = names.length === 1
+      ? `${names[0]} sent ${photos.length} proof photos`
+      : `${names[0]} and ${names.length - 1} other${names.length === 2 ? '' : 's'} sent proof photos`;
     return {
-      title: 'New photos to review',
-      body: names.length === 1
-        ? `${names[0]} sent ${photos.length} proof photos.`
-        : `${names[0]} and ${names.length - 1} other${names.length === 2 ? '' : 's'} sent proof photos.`,
+      title: late.length ? 'Photos to review, including earlier days' : 'New photos to review',
+      body: late.length
+        ? `${who} — ${late.length} for ${late.length === 1 ? 'an earlier day' : 'earlier days'}.`
+        : `${who}.`,
       data: { screen: 'review' }
     };
   }
