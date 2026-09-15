@@ -7,8 +7,8 @@
  * PNG and fills it with a colour).
  *
  *   brand/qht-logo-source.png  ->  public/icons/qht-mark.png   (dandelion only)
- *                                  public/icons/qht-logo.png   (mark + wordmark)
  *                                  public/icons/qht-word.png   (wordmark only)
+ *                                  public/icons/qht-logo.png   (the two, side by side)
  */
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -84,14 +84,26 @@ const parts = await p.evaluate(async (src) => {
     const out = document.createElement('canvas');
     out.width = w + pad * 2; out.height = h + pad * 2;
     out.getContext('2d').drawImage(c, l, t, w, h, pad, pad, w, h);
-    return { url: out.toDataURL('image/png'), w: out.width, h: out.height };
+    return out;
   };
 
-  return {
-    mark: cut(from0, split),
-    word: cut(split, to0),
-    full: cut(from0, to0)
-  };
+  const mark = cut(from0, split);
+  const word = cut(split, to0);
+
+  /* The lockup the app shows is the horizontal one: dandelion first, wordmark
+     beside it, both at the scale they were drawn at and centred against each
+     other. Building it here rather than cropping it means the stacked artwork
+     and the side-by-side artwork both end up looking the same in the bars. */
+  const gap = Math.round(mark.width * 0.16);
+  const full = document.createElement('canvas');
+  full.width = mark.width + gap + word.width;
+  full.height = Math.max(mark.height, word.height);
+  const fg = full.getContext('2d');
+  fg.drawImage(mark, 0, Math.round((full.height - mark.height) / 2));
+  fg.drawImage(word, mark.width + gap, Math.round((full.height - word.height) / 2));
+
+  const shot = cv => ({ url: cv.toDataURL('image/png'), w: cv.width, h: cv.height });
+  return { mark: shot(mark), word: shot(word), full: shot(full) };
 }, dataUri);
 
 await b.close();
