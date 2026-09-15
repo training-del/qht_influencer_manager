@@ -52,19 +52,27 @@ const parts = await p.evaluate(async (src) => {
   while (left < right && !colHasInk(left)) left++;
   while (right > left && !colHasInk(right)) right--;
 
-  /* The widest band of blank rows inside the logo is the gap between the
-     dandelion and the QHT wordmark — that is where the two parts split. */
+  /* The widest blank band inside the logo is the gap between the dandelion and
+     the QHT wordmark. The artwork has been supplied both ways — the mark above
+     the word, and the two side by side — so the gap is looked for along
+     whichever direction the logo is laid out in. */
+  const sideBySide = (right - left) > (bottom - top) * 1.6;
+  const blankAt = i => (sideBySide ? !colHasInk(i) : !rowHasInk(i));
+  const from0 = sideBySide ? left : top;
+  const to0 = sideBySide ? right : bottom;
+
   let best = { start: -1, len: 0 };
   let run = -1;
-  for (let y = top; y <= bottom; y++) {
-    if (!rowHasInk(y)) { if (run < 0) run = y; }
-    else if (run >= 0) { if (y - run > best.len) best = { start: run, len: y - run }; run = -1; }
+  for (let i = from0; i <= to0; i++) {
+    if (blankAt(i)) { if (run < 0) run = i; }
+    else if (run >= 0) { if (i - run > best.len) best = { start: run, len: i - run }; run = -1; }
   }
-  const split = best.len > 0 ? best.start + Math.round(best.len / 2) : bottom;
+  const split = best.len > 0 ? best.start + Math.round(best.len / 2) : to0;
 
   /** Crops a region, tight to its own ink, with a little room for round caps. */
-  const cut = (y0, y1) => {
-    let l = left, r = right, t = y0, bm = y1;
+  const cut = (a0, a1) => {
+    let l = sideBySide ? a0 : left, r = sideBySide ? a1 : right;
+    let t = sideBySide ? top : a0, bm = sideBySide ? bottom : a1;
     while (t < bm && !rowHasInk(t)) t++;
     while (bm > t && !rowHasInk(bm)) bm--;
     const hasInkInBand = x => { for (let y = t; y <= bm; y++) if (alphaAt(x, y) > CUT) return true; return false; };
@@ -79,7 +87,11 @@ const parts = await p.evaluate(async (src) => {
     return { url: out.toDataURL('image/png'), w: out.width, h: out.height };
   };
 
-  return { mark: cut(top, split), word: cut(split, bottom), full: cut(top, bottom) };
+  return {
+    mark: cut(from0, split),
+    word: cut(split, to0),
+    full: cut(from0, to0)
+  };
 }, dataUri);
 
 await b.close();
