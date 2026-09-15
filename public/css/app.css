@@ -704,6 +704,9 @@ img[data-p]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px;
 
 /* -------------------------------- role cards -------------------------------- */
 /* A dropdown hid what each role can do; these say it on the tile. */
+/* a head influencer cannot choose a parent — they are it */
+.under-you { margin: 0 0 .9rem; }
+
 .choices { display: grid; gap: .6rem; }
 @media (min-width: 640px) { .choices { grid-template-columns: 1fr 1fr; } }
 

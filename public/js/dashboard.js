@@ -570,7 +570,10 @@ async function renderRegister() {
      theirs to fill in from "My details" once they sign in — chasing that
      information before the account exists only delayed the account. */
   const STEPS = [
-    { key: 'role', title: 'Role & placement', hint: 'Who are you adding, and who do they report to?' },
+    { key: 'role',
+      title: isAdmin ? 'Role & placement' : 'Who you are adding',
+      hint: isAdmin ? 'Who are you adding, and who do they report to?'
+                    : 'Everyone you add joins your own team.' },
     { key: 'personal', title: 'Their details', hint: 'Name, phone and email, plus the temporary password they first sign in with.' },
     ...(isAdmin ? [{ key: 'token', title: 'Token amount', hint: 'What they are paid each payout cycle.' }] : []),
     { key: 'review', title: 'Review & register', hint: 'Check it over, then create the account.' }
@@ -598,6 +601,7 @@ async function renderRegister() {
           ${roleCard('head_influencer', 'Head Influencer',
               'Registers and reviews their own influencers.', KPI_ICONS.heads)}
         </div>` : `
+        <p class="msg info under-you">This influencer joins <b>your team</b> — ${esc(me.user.full_name)}.</p>
         <div class="choices" role="group" aria-label="Role">
           <div class="choice is-only">
             <span class="choice-ic" aria-hidden="true">${svg(KPI_ICONS.people)}</span>
@@ -615,8 +619,7 @@ async function renderRegister() {
           ${heads.map(h => `<option value="${h.id}">${esc(h.full_name)} (${h.team_size} in team)</option>`).join('')}
         </select>
         <p class="hint">A Head Influencer always reports straight to QHT Admin.</p>
-      </div>` : `<div class="field" style="margin-top:1rem"><label>Place under</label>
-        <input value="${esc(me.user.full_name)} (you)" disabled></div>`}`,
+      </div>` : ''}`,
 
     personal: `
       <div class="grid2">
