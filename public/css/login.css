@@ -95,7 +95,7 @@ body.auth {
 .auth-brand > * { position: relative; }
 
 .auth-brand .brandmark {
-  width: 104px; height: 132px;                 /* 495 x 630 artwork */
+  width: 216px; height: 92px;                  /* 2063 x 883 artwork */
   background-color: var(--teal-dark);
 }
 
@@ -422,7 +422,7 @@ body.auth {
   .portal-ic { width: 46px; height: 46px; border-radius: 14px; }
   .auth-form .head .qht-logo {
     display: block;
-    width: 84px; height: 107px;
+    width: 190px; height: 81px;
     margin: 0 auto .7rem;
     color: var(--teal-dark);
   }
