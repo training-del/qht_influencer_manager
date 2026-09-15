@@ -19,20 +19,17 @@ import { api, $, $$, esc, toast, loadProtectedImage } from '/js/api.js';
 import { shrinkImage, ID_PHOTO, sizeLabel } from '/js/shrink.js';
 
 /* ---------------------------------- formats ---------------------------------- */
-/* Checked in the browser to catch a typo while it is still on screen. An X is
-   accepted in Aadhaar because people are told to mask the first eight digits. */
-const ID_TYPES = {
-  aadhaar:  { label: 'Aadhaar',         hint: '12 digits',                     eg: '1234 5678 9012',
-              ok: v => /^[\dX]{4}[\s-]?[\dX]{4}[\s-]?\d{4}$/.test(v) },
-  pan:      { label: 'PAN',             hint: '5 letters, 4 digits, 1 letter', eg: 'ABCDE1234F',
-              ok: v => /^[A-Z]{5}\d{4}[A-Z]$/.test(v) },
-  passport: { label: 'Passport',        hint: '1 letter and 7 digits',         eg: 'K1234567',
-              ok: v => /^[A-Z]\d{7}$/.test(v) },
-  dl:       { label: 'Driving licence', hint: 'as printed on the card',        eg: 'MH12 20110012345',
-              ok: v => /^[A-Z0-9][A-Z0-9\s-]{7,19}$/.test(v) },
-  voter:    { label: 'Voter ID',        hint: '3 letters and 7 digits',        eg: 'ABC1234567',
-              ok: v => /^[A-Z]{3}\d{7}$/.test(v) }
+/* Checked in the browser to catch a typo while it is still on screen.
+   Aadhaar is the only ID the app takes, and it is twelve digits — nothing
+   else. The spaces are cosmetic: put in while typing, taken out before the
+   number is sent or checked. */
+const AADHAAR = {
+  ok: v => /^\d{12}$/.test(digitsOf(v)),
+  hint: '12 digits',
+  eg: '1234 5678 9012'
 };
+const digitsOf = v => String(v || '').replace(/\D/g, '').slice(0, 12);
+const spaced = v => digitsOf(v).replace(/\d{4}(?=\d)/g, m => m + ' ');
 
 const RULES = {
   email:         { ok: v => /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(v), hint: 'name@example.com' },
@@ -43,7 +40,7 @@ const RULES = {
 };
 
 /* upper-case as they type — these are always written in capitals */
-const UPPER = new Set(['bankIfsc', 'idProofNumber']);
+const UPPER = new Set(['bankIfsc']);
 
 const FIELDS = ['email', 'instagram', 'address', 'idProofType', 'idProofNumber',
                 'upiId', 'bankAccountName', 'bankAccountNo', 'bankIfsc'];
@@ -62,11 +59,10 @@ const svg = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
  * mounting the form.
  */
 export function detailsProgress(u) {
-  const id = ID_TYPES[u.id_proof_type];
   const state = {
     email: RULES.email.ok(u.email || '') && RULES.instagram.ok(u.instagram_id || ''),
     address: (u.address || '').trim().length >= 8,
-    'ID proof': !!(id && id.ok(u.id_proof_number || '') && u.id_proof_file),
+    'ID proof': AADHAAR.ok(u.id_proof_number || '') && !!u.id_proof_file,
     'UPI or bank details': RULES.upiId.ok(u.upi_id || '') ||
       (RULES.bankAccountNo.ok(u.bank_account_no || '') && RULES.bankIfsc.ok(u.bank_ifsc || '') &&
        !!u.bank_account_name)
@@ -157,20 +153,13 @@ export function mountMyDetails(host, user, onSaved) {
               <span class="md-sec-ic">${svg(ICON.id)}</span>
               <h3>ID proof</h3><span class="md-state"></span>
             </div>
-            <div class="grid2">
-              <div class="field">
-                <label for="mdIdType">Type</label>
-                <select id="mdIdType" name="idProofType">
-                  ${Object.entries(ID_TYPES).map(([v, t]) =>
-                    `<option value="${v}" ${u.id_proof_type === v ? 'selected' : ''}>${t.label}</option>`).join('')}
-                </select>
-              </div>
-              <div class="field">
-                <label for="mdIdNumber">Number</label>
-                <input id="mdIdNumber" name="idProofNumber" value="${esc(u.id_proof_number || '')}"
-                       autocomplete="off">
-                <p class="md-hint" data-for="idProofNumber"></p>
-              </div>
+            <input type="hidden" id="mdIdType" name="idProofType" value="aadhaar">
+            <div class="field">
+              <label for="mdIdNumber">Aadhaar number</label>
+              <input id="mdIdNumber" name="idProofNumber" value="${esc(spaced(u.id_proof_number || ''))}"
+                     inputmode="numeric" maxlength="14" autocomplete="off"
+                     placeholder="1234 5678 9012">
+              <p class="md-hint" data-for="idProofNumber"></p>
             </div>
 
             <div class="field">
@@ -182,7 +171,7 @@ export function mountMyDetails(host, user, onSaved) {
                   <p class="md-hint" id="mdFileHint">
                     ${u.id_proof_file
                       ? 'One is already on file. <button type="button" class="link" id="mdViewId">See it</button>'
-                      : 'A clear photo of the ID you named above.'}
+                      : 'A clear photo of your Aadhaar card.'}
                   </p>
                 </div>
               </div>
@@ -257,12 +246,10 @@ export function mountMyDetails(host, user, onSaved) {
     };
 
     /* ------------------------------- completion ------------------------------- */
-    const idRule = () => ID_TYPES[field('idProofType').value];
-
     const SECTIONS = {
       contact: () => RULES.email.ok(current('email')) && RULES.instagram.ok(current('instagram')),
       address: () => current('address').length >= 8,
-      id: () => idRule().ok(current('idProofNumber')) && (!!u.id_proof_file || !!fileInput.files[0]),
+      id: () => AADHAAR.ok(current('idProofNumber')) && (!!u.id_proof_file || !!fileInput.files[0]),
       payout: () => RULES.upiId.ok(current('upiId')) ||
         (RULES.bankAccountNo.ok(current('bankAccountNo')) && RULES.bankIfsc.ok(current('bankIfsc')) &&
          !!current('bankAccountName'))
@@ -277,7 +264,7 @@ export function mountMyDetails(host, user, onSaved) {
       const input = field(name);
       const v = current(name);
       const rule = name === 'idProofNumber'
-        ? { ok: idRule().ok, hint: `${idRule().hint}, like ${idRule().eg}` }
+        ? { ok: AADHAAR.ok, hint: `${AADHAAR.hint}, like ${AADHAAR.eg}` }
         : RULES[name];
 
       input.classList.remove('md-ok', 'md-bad');
@@ -345,6 +332,12 @@ export function mountMyDetails(host, user, onSaved) {
 
     /* --------------------------------- wiring --------------------------------- */
     form.addEventListener('input', e => {
+      if (e.target.name === 'idProofNumber') {
+        /* letters simply never appear; the caret stays at the end, which is
+           where it is while a number is being typed in */
+        const tidy = spaced(e.target.value);
+        if (tidy !== e.target.value) e.target.value = tidy;
+      }
       if (UPPER.has(e.target.name)) {
         const upper = e.target.value.toUpperCase();
         if (upper !== e.target.value) e.target.value = upper;
@@ -447,7 +440,7 @@ export function mountMyDetails(host, user, onSaved) {
       const fd = new FormData();
       for (const n of edits) {
         if (n === 'idProofFile') fd.append('idProofFile', await (idReady ?? fileInput.files[0]));
-        else fd.append(n, current(n));
+        else fd.append(n, n === 'idProofNumber' ? digitsOf(current(n)) : current(n));
       }
 
       try {

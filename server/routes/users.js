@@ -77,7 +77,8 @@ r.post('/', requireRole('admin', 'head_influencer'), upload.single('idProofFile'
        status, token_amount, payout_cycle, next_payout_date)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending_agreement',?,?,?)`,
     role, parentId, b.fullName.trim(), phone, countryCode, b.email?.trim() || null, b.address || null,
-    b.idProofType || null, b.idProofNumber || null,
+    b.idProofNumber ? 'aadhaar' : null,
+    b.idProofNumber ? String(b.idProofNumber).replace(/[\s-]/g, '') : null,
     req.file ? 'idproofs/' + req.file.filename : null,
     b.bankAccountName || null, b.bankAccountNo || null, b.bankIfsc || null, b.upiId || null,
     String(b.instagram || '').trim().replace(/^@+/, '') || null,
@@ -187,6 +188,19 @@ r.patch('/me', upload.single('idProofFile'), (req, res) => {
   for (const [field, column] of Object.entries(OWN_FIELDS)) {
     if (!(field in given)) continue;
     const value = String(given[field] ?? '').trim();
+
+    /* The type is not the sender's to choose — Aadhaar is the only ID the app
+       takes, so saving a number sets both columns together. */
+    if (field === 'idProofType') continue;
+    if (field === 'idProofNumber') {
+      const digits = value.replace(/[\s-]/g, '');
+      if (!/^\d{12}$/.test(digits)) {
+        return res.status(400).json({ error: 'An Aadhaar number is 12 digits' });
+      }
+      values.push(digits); sets.push('id_proof_number = ?');
+      values.push('aadhaar'); sets.push('id_proof_type = ?');
+      continue;
+    }
 
     if (field === 'email') {
       if (!value) return res.status(400).json({ error: 'Email cannot be emptied' });

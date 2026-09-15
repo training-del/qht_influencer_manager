@@ -127,7 +127,8 @@ async function register({ request, env, user, json }) {
      VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,1,'pending_agreement',?17,?18,?19)`
   ).bind(
     role, parentId, b.fullName.trim(), phone, countryCode, b.email?.trim() || null,
-    b.address || null, b.idProofType || null, b.idProofNumber || null, idProofKey,
+    b.address || null, b.idProofNumber ? 'aadhaar' : null,
+    b.idProofNumber ? cleanAadhaar(b.idProofNumber) : null, idProofKey,
     b.bankAccountName || null, b.bankAccountNo || null, b.bankIfsc || null, b.upiId || null,
     instagram, await hashPassword(b.password, roundsFor(env)), Number(b.tokenAmount) || 0,
     b.payoutCycle || 'monthly', b.nextPayoutDate || null
@@ -253,6 +254,17 @@ async function one({ env, params, user, json }) {
  * the login identifier, and letting someone change it would let them take over
  * an unused number or lock themselves out.
  */
+
+/**
+ * Aadhaar is the only ID the app takes. Twelve digits; people write them in
+ * groups of four, so the spacing is dropped rather than refused.
+ */
+export function cleanAadhaar(value) {
+  const digits = String(value ?? '').replace(/[\s-]/g, '');
+  if (!/^\d{12}$/.test(digits)) throw new HttpError(400, 'An Aadhaar number is 12 digits');
+  return digits;
+}
+
 /** "@name" or "name" -> "name"; throws if it is not a handle. */
 export function cleanInstagram(value) {
   const handle = String(value ?? '').trim().replace(/^@+/, '');
@@ -291,6 +303,17 @@ async function updateSelf({ request, env, user, json }) {
     const value = given[field].trim();
 
     if (field === 'instagram') { values.push(cleanInstagram(value)); sets.push(`${column} = ?${values.length}`); continue; }
+
+    /* The type is not the sender's to choose — an Aadhaar number is the only
+       thing the field accepts, so saving one sets both columns together. */
+    if (field === 'idProofType') continue;
+    if (field === 'idProofNumber') {
+      values.push(cleanAadhaar(value));
+      sets.push(`${column} = ?${values.length}`);
+      values.push('aadhaar');
+      sets.push(`id_proof_type = ?${values.length}`);
+      continue;
+    }
 
     if (field === 'email') {
       if (!value) throw new HttpError(400, 'Email cannot be emptied');

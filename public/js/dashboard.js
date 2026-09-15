@@ -1504,7 +1504,7 @@ async function openPerson(id) {
           <a class="small ig-link" href="https://instagram.com/${esc(u.instagram_id)}" target="_blank" rel="noopener">@${esc(u.instagram_id)}</a>
         </div>` : ''}
         ${row('Registered by', u.registeredBy ? `${u.registeredBy.full_name} (${roleLabel(u.registeredBy.role)})` : 'QHT Admin')}
-        ${row('ID proof', u.id_proof_type ? `${u.id_proof_type.toUpperCase()} ${u.id_proof_number || ''}` : null)}
+        ${row('Aadhaar', u.id_proof_number ? String(u.id_proof_number).replace(/[0-9]{4}(?=[0-9])/g, m => m + ' ') : null)}
         ${row('UPI', u.upi_id)}${row('Bank', u.bank_account_no)}
         ${row('Token amount', money(u.token_amount) + ' / ' + u.payout_cycle)}
         ${row('Next payout', fmtDate(u.next_payout_date))}
