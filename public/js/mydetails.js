@@ -36,6 +36,7 @@ const ID_TYPES = {
 
 const RULES = {
   email:         { ok: v => /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(v), hint: 'name@example.com' },
+  instagram:     { ok: v => /^@?[A-Za-z0-9._]{1,30}$/.test(v),   hint: 'like qht.clinic' },
   upiId:         { ok: v => /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(v),  hint: 'like name@okhdfcbank' },
   bankIfsc:      { ok: v => /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v),      hint: '4 letters, a zero, then 6 characters' },
   bankAccountNo: { ok: v => /^\d{9,18}$/.test(v),                  hint: '9 to 18 digits' }
@@ -44,7 +45,7 @@ const RULES = {
 /* upper-case as they type — these are always written in capitals */
 const UPPER = new Set(['bankIfsc', 'idProofNumber']);
 
-const FIELDS = ['email', 'address', 'idProofType', 'idProofNumber',
+const FIELDS = ['email', 'instagram', 'address', 'idProofType', 'idProofNumber',
                 'upiId', 'bankAccountName', 'bankAccountNo', 'bankIfsc'];
 
 const ICON = {
@@ -63,7 +64,7 @@ const svg = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 export function detailsProgress(u) {
   const id = ID_TYPES[u.id_proof_type];
   const state = {
-    email: RULES.email.ok(u.email || ''),
+    email: RULES.email.ok(u.email || '') && RULES.instagram.ok(u.instagram_id || ''),
     address: (u.address || '').trim().length >= 8,
     'ID proof': !!(id && id.ok(u.id_proof_number || '') && u.id_proof_file),
     'UPI or bank details': RULES.upiId.ok(u.upi_id || '') ||
@@ -126,6 +127,15 @@ export function mountMyDetails(host, user, onSaved) {
               <input id="mdEmail" name="email" type="email" required
                      value="${esc(u.email || '')}" autocomplete="email">
               <p class="md-hint" data-for="email"></p>
+            </div>
+            <div class="field">
+              <label for="mdInstagram">Instagram id *</label>
+              <div class="ig-field">
+                <span class="ig-at" aria-hidden="true">@</span>
+                <input id="mdInstagram" name="instagram" value="${esc(u.instagram_id || '')}"
+                       placeholder="username" autocomplete="off">
+              </div>
+              <p class="md-hint" data-for="instagram"></p>
             </div>
           </section>
 
@@ -250,14 +260,14 @@ export function mountMyDetails(host, user, onSaved) {
     const idRule = () => ID_TYPES[field('idProofType').value];
 
     const SECTIONS = {
-      contact: () => RULES.email.ok(current('email')),
+      contact: () => RULES.email.ok(current('email')) && RULES.instagram.ok(current('instagram')),
       address: () => current('address').length >= 8,
       id: () => idRule().ok(current('idProofNumber')) && (!!u.id_proof_file || !!fileInput.files[0]),
       payout: () => RULES.upiId.ok(current('upiId')) ||
         (RULES.bankAccountNo.ok(current('bankAccountNo')) && RULES.bankIfsc.ok(current('bankIfsc')) &&
          !!current('bankAccountName'))
     };
-    const LABEL = { contact: 'email', address: 'address', id: 'ID proof', payout: 'UPI or bank details' };
+    const LABEL = { contact: 'email and Instagram id', address: 'address', id: 'ID proof', payout: 'UPI or bank details' };
 
     /* ------------------------------- field hints ------------------------------- */
     /* A stored value nobody has touched is left alone even if it would fail a
@@ -323,7 +333,7 @@ export function mountMyDetails(host, user, onSaved) {
         s.querySelector('.md-state').textContent = ok ? 'Done' : 'To add';
       });
 
-      ['email', 'address', 'idProofNumber', 'upiId', 'bankAccountNo', 'bankIfsc'].forEach(judge);
+      ['email', 'instagram', 'address', 'idProofNumber', 'upiId', 'bankAccountNo', 'bankIfsc'].forEach(judge);
 
       const edits = changed();
       $('#mdBar', host).classList.toggle('dirty', edits.length > 0);

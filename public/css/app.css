@@ -725,6 +725,16 @@ img[data-p]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px;
   background: #fff; border-radius: 999px; padding: .25rem .7rem;
 }
 
+/* Instagram handle: the @ lives in the box, so nobody types it twice */
+.ig-field { display: flex; align-items: stretch; }
+.ig-at {
+  display: grid; place-items: center; padding: 0 .6rem;
+  background: var(--bg); border: 1px solid var(--line); border-right: 0;
+  border-radius: 9px 0 0 9px; color: var(--muted); font-weight: 600;
+}
+.ig-field input { border-radius: 0 9px 9px 0; }
+.ig-link { color: var(--teal-dark); font-weight: 600; }
+
 .choices { display: grid; gap: .6rem; }
 @media (min-width: 640px) { .choices { grid-template-columns: 1fr 1fr; } }
 

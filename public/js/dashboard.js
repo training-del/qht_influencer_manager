@@ -643,6 +643,13 @@ async function renderRegister() {
           </div>
           <p class="hint" id="phoneHint">10 digits, starting with 6, 7, 8 or 9.</p>
         </div>
+        <div class="field"><label for="instagram">Instagram id *</label>
+          <div class="ig-field">
+            <span class="ig-at" aria-hidden="true">@</span>
+            <input id="instagram" name="instagram" placeholder="username" autocomplete="off"
+                   required inputmode="text" pattern="[A-Za-z0-9._@]{1,31}">
+          </div>
+          <p class="hint">Their public Instagram handle, without the @.</p></div>
         <div class="field"><label for="email">Email *</label>
           <input id="email" name="email" type="email" required autocomplete="email"
                  placeholder="name@example.com"></div>
@@ -771,6 +778,12 @@ async function renderRegister() {
         return { ok: false, msg: 'That email address does not look right', focus: '#email' };
       }
 
+      const insta = $('#instagram').value.trim().replace(/^@+/, '');
+      if (!insta) return { ok: false, msg: 'Instagram id is required', focus: '#instagram' };
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(insta)) {
+        return { ok: false, msg: 'That Instagram id does not look right — letters, digits, dots and underscores only', focus: '#instagram' };
+      }
+
       if ($('#password').value.length < 6) {
         return { ok: false, msg: 'Temporary password must be at least 6 characters', focus: '#password' };
       }
@@ -857,6 +870,7 @@ async function renderRegister() {
         ${line('Reports to', under)}
         ${line('Phone', `${$('#countryCode').value} ${val('#phone')}`)}
         ${line('Email', val('#email'))}
+        ${line('Instagram', val('#instagram') ? '@' + val('#instagram').replace(/^@+/, '') : '')}
         ${isAdmin ? line('Token amount', `${money(val('#tokenAmount') || 0)} / ${$('#payoutCycle').value}`) : ''}
         ${line('Temporary password', val('#password'))}
       </div>
@@ -1485,6 +1499,10 @@ async function openPerson(id) {
 
       <div class="card" style="box-shadow:none;border:1px solid var(--line)">
         ${row('Phone', formatPhone(u.phone, u.country_code))}${row('Email', u.email)}${row('Address', u.address)}
+        ${u.instagram_id ? `<div class="row-between" style="padding:.35rem 0;border-bottom:1px solid var(--line)">
+          <span class="small muted">Instagram</span>
+          <a class="small ig-link" href="https://instagram.com/${esc(u.instagram_id)}" target="_blank" rel="noopener">@${esc(u.instagram_id)}</a>
+        </div>` : ''}
         ${row('Registered by', u.registeredBy ? `${u.registeredBy.full_name} (${roleLabel(u.registeredBy.role)})` : 'QHT Admin')}
         ${row('ID proof', u.id_proof_type ? `${u.id_proof_type.toUpperCase()} ${u.id_proof_number || ''}` : null)}
         ${row('UPI', u.upi_id)}${row('Bank', u.bank_account_no)}

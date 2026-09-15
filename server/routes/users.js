@@ -17,7 +17,7 @@ const r = Router();
 r.use(authenticate, requireAgreement, requirePasswordSet);
 
 const COLS = [
-  'id', 'role', 'parent_id', 'full_name', 'phone', 'country_code', 'email', 'address',
+  'id', 'role', 'parent_id', 'full_name', 'phone', 'country_code', 'email', 'address', 'instagram_id',
   'id_proof_type', 'id_proof_number', 'id_proof_file',
   'bank_account_name', 'bank_account_no', 'bank_ifsc', 'upi_id',
   'status', 'token_amount', 'payout_cycle', 'next_payout_date', 'created_at'
@@ -37,11 +37,11 @@ r.post('/', requireRole('admin', 'head_influencer'), upload.single('idProofFile'
      two ways to reach them. The rest is theirs to fill in — see PATCH /me. */
   for (const [field, label] of [
     ['fullName', 'Full name'], ['phone', 'Phone number'],
-    ['email', 'Email'], ['password', 'Temporary password']
+    ['email', 'Email'], ['instagram', 'Instagram id'], ['password', 'Temporary password']
   ]) {
     if (!b[field]?.trim()) return res.status(400).json({ error: `${label} is required` });
   }
-  if (!/^[^@s]+@[^@s.]+.[^@s]+$/.test(b.email.trim())) {
+  if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(b.email.trim())) {
     return res.status(400).json({ error: 'That email address does not look right' });
   }
   if (String(b.password).length < 6) {
@@ -73,13 +73,14 @@ r.post('/', requireRole('admin', 'head_influencer'), upload.single('idProofFile'
 
   const info = run(
     `INSERT INTO users (role, parent_id, full_name, phone, country_code, email, address, id_proof_type, id_proof_number,
-       id_proof_file, bank_account_name, bank_account_no, bank_ifsc, upi_id, password_hash, must_change_pw,
+       id_proof_file, bank_account_name, bank_account_no, bank_ifsc, upi_id, instagram_id, password_hash, must_change_pw,
        status, token_amount, payout_cycle, next_payout_date)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending_agreement',?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'pending_agreement',?,?,?)`,
     role, parentId, b.fullName.trim(), phone, countryCode, b.email?.trim() || null, b.address || null,
     b.idProofType || null, b.idProofNumber || null,
     req.file ? 'idproofs/' + req.file.filename : null,
     b.bankAccountName || null, b.bankAccountNo || null, b.bankIfsc || null, b.upiId || null,
+    String(b.instagram || '').trim().replace(/^@+/, '') || null,
     hashPassword(b.password), Number(b.tokenAmount) || 0,
     b.payoutCycle || 'monthly', b.nextPayoutDate || null
   );
@@ -189,7 +190,7 @@ r.patch('/me', upload.single('idProofFile'), (req, res) => {
 
     if (field === 'email') {
       if (!value) return res.status(400).json({ error: 'Email cannot be emptied' });
-      if (!/^[^@s]+@[^@s.]+.[^@s]+$/.test(value)) {
+      if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(value)) {
         return res.status(400).json({ error: 'That email address does not look right' });
       }
       if (get(`SELECT id FROM users WHERE lower(email) = lower(?) AND id <> ?`, value, req.user.id)) {

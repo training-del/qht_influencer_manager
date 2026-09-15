@@ -19,7 +19,7 @@ import { validatePhone, validateCountryCode, DEFAULT_COUNTRY } from '../lib/phon
 import { discard, restoreReferenced } from '../lib/trash.js';
 
 const COLS = [
-  'id', 'role', 'parent_id', 'full_name', 'phone', 'country_code', 'email', 'address',
+  'id', 'role', 'parent_id', 'full_name', 'phone', 'country_code', 'email', 'address', 'instagram_id',
   'id_proof_type', 'id_proof_number', 'id_proof_file',
   'bank_account_name', 'bank_account_no', 'bank_ifsc', 'upi_id',
   'status', 'token_amount', 'payout_cycle', 'next_payout_date', 'created_at'
@@ -66,7 +66,7 @@ async function register({ request, env, user, json }) {
      left to the person themselves — see updateSelf below. */
   for (const [field, label] of [
     ['fullName', 'Full name'], ['phone', 'Phone number'],
-    ['email', 'Email'], ['password', 'Temporary password']
+    ['email', 'Email'], ['instagram', 'Instagram id'], ['password', 'Temporary password']
   ]) {
     if (!b[field]?.trim()) throw new HttpError(400, `${label} is required`);
   }
@@ -115,17 +115,21 @@ async function register({ request, env, user, json }) {
     });
   }
 
+  /* Stored bare: "@qht" and "qht" are the same handle,
+     and Instagram allows letters, digits, dots and underscores, up to 30. */
+  const instagram = cleanInstagram(b.instagram);
+
   const info = await env.DB.prepare(
     `INSERT INTO users (role, parent_id, full_name, phone, country_code, email, address,
        id_proof_type, id_proof_number, id_proof_file, bank_account_name, bank_account_no,
-       bank_ifsc, upi_id, password_hash, must_change_pw, status, token_amount,
+       bank_ifsc, upi_id, instagram_id, password_hash, must_change_pw, status, token_amount,
        payout_cycle, next_payout_date)
-     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,1,'pending_agreement',?16,?17,?18)`
+     VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,1,'pending_agreement',?17,?18,?19)`
   ).bind(
     role, parentId, b.fullName.trim(), phone, countryCode, b.email?.trim() || null,
     b.address || null, b.idProofType || null, b.idProofNumber || null, idProofKey,
     b.bankAccountName || null, b.bankAccountNo || null, b.bankIfsc || null, b.upiId || null,
-    await hashPassword(b.password, roundsFor(env)), Number(b.tokenAmount) || 0,
+    instagram, await hashPassword(b.password, roundsFor(env)), Number(b.tokenAmount) || 0,
     b.payoutCycle || 'monthly', b.nextPayoutDate || null
   ).run();
 
@@ -249,6 +253,16 @@ async function one({ env, params, user, json }) {
  * the login identifier, and letting someone change it would let them take over
  * an unused number or lock themselves out.
  */
+/** "@name" or "name" -> "name"; throws if it is not a handle. */
+export function cleanInstagram(value) {
+  const handle = String(value ?? '').trim().replace(/^@+/, '');
+  if (!handle) return null;
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)) {
+    throw new HttpError(400, 'That Instagram id does not look right — letters, digits, dots and underscores only');
+  }
+  return handle;
+}
+
 const OWN_FIELDS = {
   email: 'email',
   address: 'address',
@@ -257,7 +271,8 @@ const OWN_FIELDS = {
   bankAccountName: 'bank_account_name',
   bankAccountNo: 'bank_account_no',
   bankIfsc: 'bank_ifsc',
-  upiId: 'upi_id'
+  upiId: 'upi_id',
+  instagram: 'instagram_id'
 };
 
 async function updateSelf({ request, env, user, json }) {
@@ -274,6 +289,8 @@ async function updateSelf({ request, env, user, json }) {
   for (const [field, column] of Object.entries(OWN_FIELDS)) {
     if (!(field in given)) continue;
     const value = given[field].trim();
+
+    if (field === 'instagram') { values.push(cleanInstagram(value)); sets.push(`${column} = ?${values.length}`); continue; }
 
     if (field === 'email') {
       if (!value) throw new HttpError(400, 'Email cannot be emptied');
