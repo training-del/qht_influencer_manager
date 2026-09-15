@@ -570,10 +570,8 @@ async function renderRegister() {
      theirs to fill in from "My details" once they sign in — chasing that
      information before the account exists only delayed the account. */
   const STEPS = [
-    { key: 'role',
-      title: isAdmin ? 'Role & placement' : 'Who you are adding',
-      hint: isAdmin ? 'Who are you adding, and who do they report to?'
-                    : 'Everyone you add joins your own team.' },
+    ...(isAdmin ? [{ key: 'role', title: 'Role & placement',
+                     hint: 'Who are you adding, and who do they report to?' }] : []),
     { key: 'personal', title: 'Their details', hint: 'Name, phone and email, plus the temporary password they first sign in with.' },
     ...(isAdmin ? [{ key: 'token', title: 'Token amount', hint: 'What they are paid each payout cycle.' }] : []),
     { key: 'review', title: 'Review & register', hint: 'Check it over, then create the account.' }
@@ -622,6 +620,14 @@ async function renderRegister() {
       </div>` : ''}`,
 
     personal: `
+      ${isAdmin ? '' : `<div class="who-add">
+        <span class="who-ic" aria-hidden="true">${svg(KPI_ICONS.people)}</span>
+        <span class="who-txt">
+          <b>New influencer</b>
+          <span class="tiny">Takes the dava and sends a photo every day.</span>
+        </span>
+        <span class="who-team">joins <b>${esc(me.user.full_name)}</b>’s team</span>
+      </div>`}
       <div class="grid2">
         <div class="field"><label for="fullName">Full name *</label>
           <input id="fullName" name="fullName" required autocomplete="name"></div>

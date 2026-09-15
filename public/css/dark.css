@@ -204,6 +204,19 @@ html[data-theme="dark"] .team-cal .pip.flagged {
 html[data-theme="dark"] .wiz-track > i {
   background: linear-gradient(90deg, #3e7369, var(--teal));
 }
+html[data-theme="dark"] .who-add {
+  border: 1px solid #407168;
+}
+html[data-theme="dark"] .who-ic {
+  background: #141a24;
+}
+html[data-theme="dark"] .who-txt .tiny {
+  color: #c4dfdc;
+}
+html[data-theme="dark"] .who-team {
+  color: #c4dfdc;
+  background: #141a24;
+}
 html[data-theme="dark"] .choice:hover:not(.is-only) {
   border-color: #407168;
 }
