@@ -12,11 +12,6 @@
     .terms-head { background: var(--ink); color: #fff; padding: 1.2rem 1rem; }
     .terms-head h1 { color: #fff; margin-bottom: .2rem; }
     .terms-head p { color: #cbd5e1; margin: 0; font-size: .86rem; }
-    .token-box {
-      background: var(--teal-soft); border: 1px solid #5eead4; border-radius: var(--radius);
-      padding: .9rem; margin-bottom: 1rem;
-    }
-    .token-box .amt { font-size: 1.6rem; font-weight: 800; color: #115e59; line-height: 1.1; }
     .sticky-accept {
       position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line);
       padding: .8rem; margin: 0 -1rem -3rem; box-shadow: 0 -2px 8px rgba(15,23,42,.06);
@@ -44,12 +39,6 @@
 
     <!-- ===== acceptance mode (status = pending_agreement) ===== -->
     <div id="acceptView" class="hide">
-      <div class="token-box">
-        <div class="small" style="color:#115e59">Your token amount per payout cycle</div>
-        <div class="amt" id="tokenAmt">—</div>
-        <div class="small" id="tokenSub" style="color:#115e59"></div>
-      </div>
-
       <div class="msg info">
         Tick every box below. You cannot reach your dashboard until all terms are accepted.
       </div>
@@ -82,7 +71,7 @@
   </div>
 
   <script type="module">
-    import { api, auth, $, esc, money, toast, fmtDate, homeFor, nextScreen, goTo } from '/js/api.js';
+    import { api, auth, $, esc, toast, fmtDate, homeFor, nextScreen, goTo } from '/js/api.js';
 
     const me = await api('/auth/me').catch(() => null);
     if (!me) await goTo('/');
@@ -97,15 +86,9 @@
         $('#agTitle').textContent = a.title;
         $('#agSub').textContent = `Version ${a.version_label} · accepted ${fmtDate(a.accepted_at)}`;
         $('#acceptedMeta').innerHTML = `
-          <div class="row-between">
-            <div>
-              <div class="small muted">Signed by</div>
-              <b>${esc(a.signature_name)}</b>
-            </div>
-            <div style="text-align:right">
-              <div class="small muted">Token amount agreed</div>
-              <b>${money(a.token_amount_snap)}</b>
-            </div>
+          <div>
+            <div class="small muted">Signed by</div>
+            <b>${esc(a.signature_name)}</b>
           </div>
           <p class="tiny muted" style="margin:.6rem 0 0">
             ${a.duration_days} day commitment · minimum ${a.min_compliance}% compliance for full payout
@@ -130,8 +113,6 @@
       const ag = await api('/agreement/current');
       $('#agTitle').textContent = ag.title;
       $('#agSub').textContent = `Version ${ag.version} · ${ag.duration_days} days · minimum ${ag.min_compliance}% compliance`;
-      $('#tokenAmt').textContent = money(ag.tokenAmount);
-      $('#tokenSub').textContent = `paid ${ag.payoutCycle}, subject to the terms below`;
       $('#regName').textContent = me.user.full_name;
 
       $('#clauses').innerHTML = ag.clauses.map((c, i) => `
