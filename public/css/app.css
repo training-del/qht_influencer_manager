@@ -1338,6 +1338,11 @@ li.folded > ul { display: none; }
   .report-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
 }
 
+/* the whole card opens that influencer */
+.rcard[data-person] { cursor: pointer; }
+.rcard[data-person]:hover { border-color: #9fc9c1; box-shadow: 0 8px 20px -14px rgba(15, 23, 42, .6); }
+.rcard[data-person]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
 .rcard {
   --r-accent: #5f9e85;
   display: grid; gap: .5rem;
@@ -1525,7 +1530,14 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + var(--sab)); }
 .proof-dl.done { background: var(--teal); border-color: var(--teal); color: #fff; }
 /* and rose when it could not be saved, matching the delete accents */
 /* in the review queue it sits under the thumbnail, not in a card footer */
-.proof-dl.qthumb-dl { margin: .3rem 0 0; }
+/* in the review queue the button sits on the photo's corner, not below it */
+.qthumb-wrap { position: relative; display: inline-block; line-height: 0; }
+.proof-dl.qthumb-dl {
+  position: absolute; right: -6px; bottom: -6px; margin: 0;
+  width: 26px; height: 26px; border-radius: 7px;
+  background: var(--card); box-shadow: 0 1px 4px rgba(15, 23, 42, .25);
+}
+.proof-dl.qthumb-dl svg { width: 13px; height: 13px; }
 
 .proof-dl.failed { background: #f8ecec; border-color: #e5c9c7; color: #a04f4a; }
 

@@ -996,13 +996,13 @@ async function renderSubmissions() {
           </tr></thead>
           <tbody>${rows.map(s => `
             <tr>
-              <td><img class="qthumb" data-p="${esc(s.photo_path)}" alt="Proof by ${esc(s.full_name)}"
+              <td><span class="qthumb-wrap"><img class="qthumb" data-p="${esc(s.photo_path)}" alt="Proof by ${esc(s.full_name)}"
                        data-cap="${esc(`${s.full_name} · ${fmtDate(s.submission_date)} · ${fmtTime(s.captured_at)}`)}">
                   <button class="proof-dl qthumb-dl" type="button" data-dl="${esc(s.photo_path)}"
                           data-file="${esc(proofFileName(s.full_name, s))}"
                           title="Save this photo" aria-label="Save the photo of ${esc(s.full_name)}">
                     ${svg('<path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>')}
-                  </button></td>
+                  </button></span></td>
               <td class="name"><b>${esc(s.full_name)}</b>
                 <div class="tiny muted">${esc(roleLabel(s.role))} · ${esc(s.parent_name || 'QHT Admin')}</div></td>
               <td class="small">${esc(fmtDate(s.submission_date))}
@@ -1335,7 +1335,8 @@ async function renderReports() {
     const tone = c.compliancePct >= 80 ? 'good' : c.compliancePct >= 50 ? 'warn' : 'bad';
     const stat = (n, what) => `<span class="rstat"><b>${n}</b>${esc(what)}</span>`;
     return `
-      <article class="rcard ${tone}">
+      <article class="rcard ${tone}" role="button" tabindex="0" data-person="${u.id}"
+               aria-label="Open ${esc(u.full_name)}">
         <header class="rhead">
           <span class="pav" aria-hidden="true">${esc(initialsOf(u.full_name))}</span>
           <span class="rwho">
@@ -1369,6 +1370,13 @@ async function renderReports() {
     $('#reportList').innerHTML = rows.length
       ? rows.map(rcard).join('')
       : '<p class="empty">No influencers to report on yet.</p>';
+  };
+
+  /* a card opens that influencer, like the People list does */
+  const openFromCard = el => { const c = el?.closest?.('[data-person]'); if (c) { openPerson(Number(c.dataset.person)); return true; } };
+  $('#reportList').onclick = e => openFromCard(e.target);
+  $('#reportList').onkeydown = e => {
+    if ((e.key === 'Enter' || e.key === ' ') && openFromCard(e.target)) e.preventDefault();
   };
 
   $('#reportSort').onchange = drawReport;

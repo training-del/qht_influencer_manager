@@ -377,6 +377,10 @@ html[data-theme="dark"] .picon:hover {
   background: #331515;
   border-color: #61322e;
 }
+html[data-theme="dark"] .rcard[data-person]:hover {
+  border-color: #407168;
+  box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.6);
+}
 html[data-theme="dark"] .rcard.good .rpct {
   color: #c0dfd6;
 }
@@ -472,6 +476,9 @@ html[data-theme="dark"] .md-savebar.dirty .md-status {
 }
 html[data-theme="dark"] .proof-dl.done {
   color: #ffffff;
+}
+html[data-theme="dark"] .proof-dl.qthumb-dl {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
 }
 html[data-theme="dark"] .proof-dl.failed {
   background: #331515;
