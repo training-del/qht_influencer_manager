@@ -470,6 +470,14 @@ html[data-theme="dark"] .md-savebar.dirty {
 html[data-theme="dark"] .md-savebar.dirty .md-status {
   color: #e4d1ba;
 }
+html[data-theme="dark"] .proof-dl.done {
+  color: #ffffff;
+}
+html[data-theme="dark"] .proof-dl.failed {
+  background: #331515;
+  border-color: #61322e;
+  color: #d4b6b4;
+}
 html[data-theme="dark"] .cal .day {
   background: #141a24;
 }

@@ -242,6 +242,41 @@ export async function loadProtectedImage(imgEl, path) {
 }
 
 /**
+ * Saves a proof photo to the device, exactly as it was uploaded.
+ *
+ * The photo is private, so it cannot be a plain link — it is fetched with the
+ * signed-in token. The thumbnail on screen already holds the whole file, so
+ * that blob is reused: no second download, and no re-encoding, so the saved
+ * file is byte for byte the one the influencer sent.
+ *
+ * @param {string} path      the photo path, as in data-p
+ * @param {string} filename  what to call it on disk
+ * @param {HTMLImageElement} [thumb]  the thumbnail already showing it
+ */
+export async function downloadProtectedImage(path, filename, thumb) {
+  let url = thumb?.src?.startsWith("blob:") ? thumb.src : null;
+  let temporary = null;
+
+  if (!url) {
+    const res = await fetch(apiUrl("/media/" + path), {
+      headers: { Authorization: "Bearer " + auth.token }
+    });
+    if (!res.ok) throw new Error("Could not fetch that photo");
+    temporary = URL.createObjectURL(await res.blob());
+    url = temporary;
+  }
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  // only revoke what this call made; the thumbnail still needs its own
+  if (temporary) setTimeout(() => URL.revokeObjectURL(temporary), 10_000);
+}
+
+/**
  * A proof photo at full size, over everything else. The thumbnail already
  * holds the whole photo (fetched by loadProtectedImage), so it is reused —
  * no second download. Closes on the ×, a tap outside the photo, or Esc.

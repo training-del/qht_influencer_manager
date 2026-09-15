@@ -7,7 +7,7 @@ import { enablePush } from '/js/push.js';
 import { THEME_BUTTON } from '/js/theme.js';
 import {
   api, auth, $, $$, esc, money, fmtDate, fmtTime, todayStr, badge, roleLabel, statusLabel,
-  complianceBar, toast, loadProtectedImage, enablePhotoViewer, mountTopbar, requireUser,
+  complianceBar, toast, loadProtectedImage, downloadProtectedImage, enablePhotoViewer, mountTopbar, requireUser,
   COUNTRY_CODES, DEFAULT_COUNTRY, validatePhone, formatPhone, enablePasswordToggle,
   setupMonthControl, watchTables
 } from '/js/api.js';
@@ -424,6 +424,11 @@ async function renderHierarchy() {
     foldAll.textContent = allFolded ? 'Expand everyone' : 'Collapse to heads';
   };
 }
+
+/* {influencer}_{date}_{status}.jpg — kept plain so it sorts and types easily */
+const proofFileName = (name, s) =>
+  [String(name).trim().replace(/[^\w.-]+/g, '_'), s.submission_date, s.status]
+    .join("_").replace(/_+/g, "_") + ".jpg";
 
 /* ==================================== people ==================================== */
 async function renderPeople() {
@@ -1496,7 +1501,14 @@ async function openPerson(id) {
         <div class="proof-grid" id="personProofs">
           ${subs.submissions.slice(0, 6).map(s => `
             <div class="proof"><img data-p="${esc(s.photo_path)}" alt="">
-              <div class="meta"><b class="tiny">${esc(fmtDate(s.submission_date))}</b><br>${badge(s.status)}</div>
+              <div class="meta">
+                <span class="when"><b class="tiny">${esc(fmtDate(s.submission_date))}</b>${badge(s.status)}</span>
+                <button class="proof-dl" type="button" data-dl="${esc(s.photo_path)}"
+                        data-file="${esc(proofFileName(u.full_name, s))}"
+                        title="Save this photo" aria-label="Save the photo of ${esc(u.full_name)} from ${esc(fmtDate(s.submission_date))}">
+                  ${svg('<path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>')}
+                </button>
+              </div>
             </div>`).join('') || '<p class="muted small">No submissions this month.</p>'}
         </div>
       </div>` : ''}
@@ -1507,6 +1519,23 @@ async function openPerson(id) {
   $('#mbg').onclick = e => { if (e.target.id === 'mbg') close(); };
 
   $$('#personProofs img').forEach(img => loadProtectedImage(img, img.dataset.p));
+
+  /* save a copy of a proof photo to this computer */
+  $$('#personProofs .proof-dl').forEach(btn => btn.onclick = async () => {
+    const card = btn.closest('.proof');
+    btn.disabled = true;
+    try {
+      await downloadProtectedImage(btn.dataset.dl, btn.dataset.file, card.querySelector('img'));
+      btn.classList.add('done');
+      setTimeout(() => btn.classList.remove('done'), 1600);
+    } catch {
+      btn.classList.add('failed');
+      btn.title = 'Could not save that photo — try again';
+      setTimeout(() => btn.classList.remove('failed'), 2400);
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   if (isAdmin) {
     $('#saveTok').onclick = async () => {
