@@ -168,7 +168,12 @@ async function renderHistory() {
     const mark = sub
       ? ({ approved: '✓', pending: '•', rejected: '✕', flagged: '!' }[sub.status] || '')
       : (inProgramme ? '–' : '');
-    cells += `<div class="day ${cls} ${iso === today ? 'today' : ''}" title="${iso}${sub ? ' · ' + sub.status : ''}">
+    /* A day still open for a photo: nothing sent yet, or it was turned down.
+       An approved day is settled and a future one has not happened. */
+    const canSend = iso <= today && (!sub || sub.status === 'rejected');
+    cells += `<div class="day ${cls} ${iso === today ? 'today' : ''} ${canSend ? 'sendable' : ''}"
+         ${canSend ? `role="button" tabindex="0" data-send="${iso}"` : ''}
+         title="${iso}${sub ? ' · ' + sub.status : ''}${canSend ? ' · tap to send a photo' : ''}">
         <span>${d}</span><span class="tick">${mark}</span>
       </div>`;
   }
@@ -181,6 +186,7 @@ async function renderHistory() {
         <button class="btn ghost sm" id="nextM">›</button>
       </div>
       <div class="cal">${cells}</div>
+      <div id="backfill"></div>
       <div class="legend" style="margin-top:.8rem">
         <span><i class="lg-approved"></i>Approved</span>
         <span><i class="lg-pending"></i>Pending</span>
@@ -201,6 +207,26 @@ async function renderHistory() {
       <h3>This month's photos</h3>
       <div class="proof-grid" id="grid"></div>
     </div>`;
+
+  /* send a photo for an earlier day — the server still refuses future dates
+     and days already approved */
+  const openFor = iso => {
+    const host = $('#backfill');
+    host.innerHTML = '<div class="card backfill-card"></div>';
+    releaseCamera?.();
+    const up = mountUploader(host.firstElementChild, {
+      date: iso,
+      /* no msgEl: the uploader has its own line — a toast into #backfill
+         would replace the widget it is reporting on */
+      onDone: () => { calMonth = iso.slice(0, 7); renderHistory(); }
+    });
+    releaseCamera = up.stop;
+    host.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  $$('#tab-history .day[data-send]').forEach(day => {
+    day.onclick = () => openFor(day.dataset.send);
+    day.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFor(day.dataset.send); } };
+  });
 
   $('#prevM').onclick = () => { calMonth = shiftMonth(calMonth, -1); renderHistory(); };
   $('#nextM').onclick = () => { calMonth = shiftMonth(calMonth, 1); renderHistory(); };

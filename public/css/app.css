@@ -1589,6 +1589,12 @@ body:has(.bottom-nav) .md-savebar { bottom: calc(4.9rem + var(--sab)); }
 .cal .day.future { color: #cbd5e1; background: #fafafa; }
 .cal .day.today { outline: 2px solid var(--teal); outline-offset: 1px; }
 .cal .day .tick { font-size: .62rem; line-height: 1; }
+/* a past day that still needs a photo invites a tap */
+.cal .day.sendable { cursor: pointer; }
+.cal .day.sendable:hover { border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal-soft) inset; }
+.cal .day.sendable:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+.backfill-card { margin-top: .9rem; border: 1px solid var(--teal); }
+
 .legend { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .75rem; color: var(--muted); }
 .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: .25rem; vertical-align: -1px; }
 /* legend swatches match the calendar days above — in CSS, so the dark theme reaches them */
